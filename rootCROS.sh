@@ -26,8 +26,9 @@ ProcessArguments() {
 	
 	CURDIR="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 	
-	echo "[*] Change to Base Dir"
-	
+	echo "[-] Switch to the location $BASEDIR"
+	echo "[-] CURDIR=$CURDIR"
+	set -x
 	if [ "$CURDIR" != "$BASEDIR" ]; then
 		if [ ! -e "$BASEDIR" ]; then
 			mkdir -p $BASEDIR
@@ -100,7 +101,6 @@ PrepBusyBoxAndMagisk() {
 	TEMP=$BASEDIR/temp
 	FIN=$BASEDIR/fin
 	
-	echo "[-] Switch to the location of the script file"
 	TMPDIR=$BASEDIR/tmp
 	MAGISKDIR=$BASEDIR/Magisk
 	BB=$BASEDIR/busybox
