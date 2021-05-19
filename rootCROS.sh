@@ -261,7 +261,7 @@ setMagiskSQUASHFStoSYSTEM() {
 }
 
 DownloadTools() {
-	
+	curl -LO https://github.com/Magisk-Modules-Repo/busybox-ndk/raw/master/busybox-x86_64 busybox && chmod +x busybox
 }
 
 checksudo

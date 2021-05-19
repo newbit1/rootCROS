@@ -1,8 +1,8 @@
 ### Notes
 
 curl -LO https://raw.githubusercontent.com/newbit1/rootCROS/master/rootCROS.sh && chmod +x rootCROS.sh \
-curl https://github.com/Magisk-Modules-Repo/busybox-ndk/raw/master/busybox-x86_64 -L -o busybox && chmod +x busybox \
-curl https://github.com/newbit1/rootCROS/raw/master/Magisk.zip -L -O \
+curl -LO https://github.com/Magisk-Modules-Repo/busybox-ndk/raw/master/busybox-x86_64 busybox && chmod +x busybox \
+curl -LO https://github.com/newbit1/rootCROS/raw/master/Magisk.zip \
 
 
 curl -Ls https://raw.githubusercontent.com/nolirium/aroc/master/01Root.sh | sudo sh
