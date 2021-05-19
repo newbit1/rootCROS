@@ -4,6 +4,7 @@ curl -LO https://raw.githubusercontent.com/newbit1/rootCROS/master/rootCROS.sh &
 curl -LO https://github.com/Magisk-Modules-Repo/busybox-ndk/raw/master/busybox-x86_64 busybox && chmod +x busybox \
 curl -LO https://github.com/newbit1/rootCROS/raw/master/Magisk.zip \
 
+sudo rm rootCROS.sh; sudo curl -LO https://raw.githubusercontent.com/newbit1/rootCROS/master/rootCROS.sh && sudo chmod +x rootCROS.sh
 
 curl -Ls https://raw.githubusercontent.com/nolirium/aroc/master/01Root.sh | sudo sh
 curl -LO https://raw.githubusercontent.com/newbit1/rootCROS/master/rootCROS.sh | sudo sh

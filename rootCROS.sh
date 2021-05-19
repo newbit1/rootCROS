@@ -266,10 +266,11 @@ DownloadTools() {
 
 checksudo
 ProcessArguments $@
+exit 1
 #####
 $RemountDEVICE && RemountDEVICE && exit 1
 
-exit 1
+
 DownloadTools
 
 CleanUpMounts
