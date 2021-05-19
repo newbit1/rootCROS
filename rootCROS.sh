@@ -4,9 +4,11 @@
 # modded by NewBit XDA                                      #
 #############################################################
 
+
 checksudo() {
 	if [ $(id -u) != 0 ]; then
-	  echo "run sudo ./rootCROS.sh"
+	  echo "run sudo bash ./rootCROS.sh"
+	  sudo bash -c exec "$0"
 	  exit 1
 	fi
 }
@@ -14,8 +16,26 @@ checksudo() {
 ProcessArguments() {
 	# cleanup
 	RemountDEVICE=false
+	
+	
+	ADBWORKDIR=/opt/google/containers/android/rootfs/android-data/data/data/com.android.shell
+	ADBBASEDIR=$ADBWORKDIR/crosswork
+	
+	WORKDIR=/usr/local
+	BASEDIR=$WORKDIR/crosswork
+	
+	CURDIR="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+	
+	echo "[*] Change to Base Dir"
+	
+	if [ "$CURDIR" != "$BASEDIR" ]; then
+		if [ ! -e "$BASEDIR" ]; then
+			mkdir -p $BASEDIR
+		fi
+		cd $BASEDIR
+		bash -c exec $0 $@
+	fi	
 
-	BASEDIR="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 	RECOVERYIMG=/home/$USER/Downloads/chromeos_13816.64.0_rammus_recovery_stable-channel_mp-v2.bin.img
 	# ROOT-A contains the android container system and vendor
 	#ROOTA=/dev/loop0p3
@@ -240,16 +260,8 @@ setMagiskSQUASHFStoSYSTEM() {
 	mv $SYSRAWIMG.magisk $SYSRAWIMG
 }
 
-function yes_or_no {
-    while true; do
-        read -p "$* [y/n]: " yn
-        case $yn in
-            [Yy]*) return 0  ;;
-            [Nn]*) echo "Aborted" ; return  1 ;;
-            *) return 0  ;;            
-            
-        esac
-    done
+DownloadTools() {
+	
 }
 
 checksudo
@@ -257,6 +269,7 @@ ProcessArguments $@
 #####
 $RemountDEVICE && RemountDEVICE && exit 1
 
+DownloadTools
 
 CleanUpMounts
 PrepBusyBoxAndMagisk

@@ -1,8 +1,12 @@
 ### Notes
 
-curl https://raw.githubusercontent.com/newbit1/rootCROS/master/rootCROS.sh -L -O
-curl https://github.com/Magisk-Modules-Repo/busybox-ndk/raw/master/busybox-x86_64 -L -o busybox
-curl https://github.com/newbit1/rootCROS/raw/master/Magisk.zip -L -O
+curl -LO https://raw.githubusercontent.com/newbit1/rootCROS/master/rootCROS.sh && chmod +x rootCROS.sh \
+curl https://github.com/Magisk-Modules-Repo/busybox-ndk/raw/master/busybox-x86_64 -L -o busybox && chmod +x busybox \
+curl https://github.com/newbit1/rootCROS/raw/master/Magisk.zip -L -O \
+
+
+curl -Ls https://raw.githubusercontent.com/nolirium/aroc/master/01Root.sh | sudo sh
+curl -LO https://raw.githubusercontent.com/newbit1/rootCROS/master/rootCROS.sh | sudo sh
 
 ### Links
 * [ChromeOS R90 Stable Rammus](https://dl.google.com/dl/edgedl/chromeos/recovery/chromeos_13816.64.0_rammus_recovery_stable-channel_mp-v2.bin.zip)
