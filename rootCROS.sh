@@ -5,140 +5,157 @@
 #############################################################
 
 
-checksudo() {
-	SUDO=""
-	WORKDIR=/usr/local
-	BASEDIR=$WORKDIR/crosswork
-	CURDIR="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
-	
+GainRoot() {
 	if [ $(id -u) != 0 ]; then
-	  echo "run sudo bash ./rootCROS.sh"
-	  #sudo bash -c "exec $0 $@"
-	  SUDO="sudo"
+	  #echo "run:"
+	  #echo "cd \$HOME && sudo curl -LO https://raw.githubusercontent.com/newbit1/rootCROS/master/rootCROS.sh && sudo chmod +x && bash ./rootCROS.sh"
+	  #echo "sudo bash ./rootCROS.sh"
+	  sudo bash -c "exec bash $0 $@"
+	  exit 0
+	fi
+}
+
+ChangeLocation() {
+	local WORKDIR=/usr/local
+	BASEDIR=$WORKDIR/crosswork
+	local CURDIR="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+
+	if [ ! -e "$BASEDIR" ]; then
+		mkdir -p $BASEDIR
 	fi
 	
-	#set -x
 	if [ "$CURDIR" != "$BASEDIR" ]; then
-		echo "[-] Switch to the location $BASEDIR"
-		
-		if [ ! -e "$BASEDIR" ]; then
-			$SUDO mkdir -p $BASEDIR
-		fi
-		$SUDO cp "$0" $BASEDIR
-		ps
-		$SUDO bash -c "exec $BASEDIR/$0 $@"
-		#source $BASEDIR/curdir.sh
-		#echo "[-] CURDIR=$CURDIR"
+		echo "[-] Moving to the location $BASEDIR"
+		cp "$0" $BASEDIR
+		cd $BASEDIR
+		echo "[*] Re-Execute the script proper"
+		bash -c "exec ./$0 $@"
 		exit 0
 	fi
-	ps
-	echo "[-] CURDIR=$CURDIR"
-	#echo "cd $BASEDIR" > $BASEDIR/curdir.sh
-	#chmod +x $BASEDIR/curdir.sh	
-	#source $BASEDIR/curdir.sh
-	#echo "PWD=$PWD"
-	#echo "[*] worked"
-	exit 1
+		
+	export BASEDIR
 }
 
 ProcessArguments() {
-	# cleanup
-	RemountDEVICE=false
+
+	RemountDrive=false
+	CleanUpMounts=false
 	
-	
-	ADBWORKDIR=/opt/google/containers/android/rootfs/android-data/data/data/com.android.shell
-	ADBBASEDIR=$ADBWORKDIR/crosswork
-
-	RECOVERYIMG=/home/$USER/Downloads/chromeos_13816.64.0_rammus_recovery_stable-channel_mp-v2.bin.img
-	# ROOT-A contains the android container system and vendor
-	#ROOTA=/dev/loop0p3
-	ROOTA=/media/newbit/ROOT-A
-	DEVICE=$ROOTA
-	SYSRAWIMG=$ROOTA/opt/google/containers/android/system.raw.img
-	
-	if [[ "$@" == *"CleanUpMounts"* ]]; then
-		PrepBusyBoxAndMagisk
-		CleanUpMounts
-		exit 1
-	fi
-
-	if [[ "$@" == *"RemountDEVICE"* ]]; then
-		RemountDEVICE=true
-	fi
-
-	export BASEDIR
-	export RECOVERYIMG
-	export ROOTA
-	export DEVICE
-	export SYSRAWIMG
-	export RemountDEVICE
-}
-
-arch_detect() {
-	echo "[-] Arch Detect"
-	ARCH=arm
-	ARCH32=arm
-	IS64BIT=false
-	# Detect architecture
-	# To select the right files for the patching
-	
-	BASHARCH=$(which bash)
-	BASHARCH=$(file $BASHARCH)
-
-	if [[ "$BASHARCH" == *"x86-64"* ]]; then ARCH=x64; ARCH32=x86; IS64BIT=true; fi;
-	[ -d $FIN/system/lib64 ] && IS64BIT=true || IS64BIT=false
-	
-	echo "[*] ARCH32 $ARCH32"
-	echo "[-] ARCH $ARCH"
-	echo "[*] IS64BIT $IS64BIT"
-	
-	# There is only a x86 or arm DIR with binaries
-	BINDIR=$MAGISKDIR/lib/$ARCH32
-
-	[ ! -d "$BINDIR" ] && BINDIR=$MAGISKDIR/lib/armeabi-v7a
-	cd $BINDIR
-	for file in lib*.so; do mv "$file" "${file:3:${#file}-6}"; done
-	cd $BASEDIR
-
-	echo "[*] copy all files from $BINDIR to $BASEDIR"
-	chmod -R 755 $BINDIR
-	cp $BINDIR/* $BASEDIR
-}
-
-PrepBusyBoxAndMagisk() {
-
 	# Overlay Directorys
 	FM=$BASEDIR/FM
 	TO=$BASEDIR/to
 	TEMP=$BASEDIR/temp
 	FIN=$BASEDIR/fin
+	DRIVE=/
 	
 	TMPDIR=$BASEDIR/tmp
-	MAGISKDIR=$BASEDIR/Magisk
-	BB=$BASEDIR/busybox
-	MZ=$BASEDIR/Magisk.zip
-	cd $BASEDIR
-	echo "[*] Extracting busybox and Magisk.zip ..."
-	unzip -oq $MZ -d $MAGISKDIR
-	#chmod -R 755 $MAGISKDIR/lib
-	mv -f $MAGISKDIR/lib/x86/libbusybox.so $BB
-	$BB >/dev/null 2>&1 || mv -f $MAGISKDIR/lib/armeabi-v7a/libbusybox.so $BB
-	#chmod -R 755 $BASEDIR
+	
+	ANDROIROOTDIR=/opt/google/containers/android/rootfs/root
+	SYSRAWIMG=/opt/google/containers/android/system.raw.img
+	
+	#RECOVERYIMG=/home/$USER/Downloads/chromeos_13816.64.0_rammus_recovery_stable-channel_mp-v2.bin.img
+	# ROOT-A contains the android container system and vendor
+	#ROOTA=/dev/loop0p3
+	#ROOTA=/media/newbit/ROOT-A
+	
+		
+	#ANDROIDATADIR=/opt/google/containers/android/rootfs/android-data
+	ADBWORKDIR=/data/data/com.android.shell
+	ADBBASEDIR=$ADBWORKDIR/Magisk
+	
+	if [[ "$@" == *"CleanUpMounts"* ]]; then
+		CleanUpMounts=true
+	fi
+
+	if [[ "$@" == *"RemountDrive"* ]]; then
+		RemountDrive=true
+	fi
 
 	export FM
 	export TO
 	export TEMP
 	export FIN
-	export ROOTA
+	export DRIVE
+	
 	export TMPDIR
-	export BB
-	export MZ
+	
+	export ANDROIROOTDIR
+	export SYSRAWIMG
 
-	#CheckAvailableMagisks
+	export ADBWORKDIR
+	export ADBBASEDIR
+	
+	export RemountDrive
+	export CleanUpMounts
 }
 
-RemountDEVICE() {
-	mount -o remount,rw $DEVICE
+DownloadAssets() {
+	echo "PWD=$PWD"
+	TARGET=rootAVD.sh
+	if [ ! -e "$TARGET" ]; then
+		echo "[-] Downloading $TARGET"
+		curl -# -LO https://github.com/newbit1/rootAVD/raw/master/$TARGET && chmod +x $TARGET
+	else
+		echo "[-] $TARGET already there"
+	fi
+	ROOTAVD=$BASEDIR/$TARGET
+	
+	TARGET=Magisk.zip
+	if [ ! -e "$TARGET" ]; then
+		echo "[*] Downloading $TARGET"
+		curl -# -LO https://github.com/newbit1/rootAVD/raw/master/$TARGET
+	else
+		echo "[*] $TARGET already there"
+	fi
+	MZ=$BASEDIR/$TARGET
+
+	TARGET=busybox
+	if [ ! -e "$TARGET" ]; then
+		echo "[-] Downloading $TARGET"
+		curl -# -L https://github.com/Magisk-Modules-Repo/busybox-ndk/raw/master/$TARGET-x86_64 -o $TARGET && chmod +x $TARGET
+	else
+		echo "[-] $TARGET already there"
+	fi
+	BB=$BASEDIR/$TARGET
+	
+	export ROOTAVD
+	export MZ
+	export BB	
+}
+
+CreateFakeRamdisk() {
+	echo "[*] Creating Fake ramdisk.img"
+	RAMDISKDIR=$TMPDIR/fakeramdisk
+	CPIO=$BASEDIR/ramdisk.cpio
+	rm -rf $RAMDISKDIR
+	mkdir -p $RAMDISKDIR
+	echo "[*] Copy files..."
+	cp $ANDROIROOTDIR/init $RAMDISKDIR
+	#cp $ANDROIROOTDIR/fstab.cheets $RAMDISKDIR
+	echo "[*] Packing fake ramdisk.img..."
+	cd $RAMDISKDIR > /dev/null
+		`$BB find . | $BB cpio -H newc -o | $BB gzip > $BASEDIR/ramdisk.img`
+	cd - > /dev/null
+	rm -rf $RAMDISKDIR
+	export RAMDISKDIR
+}
+
+PatchFakeRamdisk() {
+	echo "[*] Cleaning up the ADB working space"
+	adb shell rm -rf $ADBBASEDIR
+	echo "[*] Creating the ADB working space"
+	adb shell mkdir $ADBBASEDIR
+	adb push * $ADBBASEDIR
+	adb shell sh $ADBBASEDIR/rootAVD.sh $@	
+	#$ROOTAVD $BASEDIR/ramdisk.img
+	adb pull $ADBBASEDIR/ramdiskpatched4AVD.img $BASEDIR/ramdisk.img
+	adb pull $ADBBASEDIR/Magisk.apk
+	echo "[*] Trying to install Magisk.apk"
+	adb install -r -d Magisk.apk
+}
+
+RemountDrive() {
+	mount -o remount,rw $DRIVE
 }
 
 CleanUp() {
@@ -159,11 +176,11 @@ CleanUpMounts() {
 	CleanUp $TO
 	CleanUp $TEMP
 	CleanUp $FIN
-	CleanUp $MAGISKDIR
-	CleanUp $BB
-	for file in magisk*; do
-		CleanUp $file
-	done
+	#CleanUp $MAGISKDIR
+	#CleanUp $BB
+	#for file in magisk*; do
+	#	CleanUp $file
+	#done
 }
 
 CreateOverlayMounts() {
@@ -216,36 +233,35 @@ ReadContextPerm() {
 
 SetPerm() {
 	# SET PERM from $1 to $2
-	chown $(sudo stat -c %u $1):$(sudo stat -c %g $1) $2
-	chmod $(sudo stat -c %#a $1) $2
+	echo "[*] Set Permissions and Context from $1 to $2"
 	chcon --reference=$1 $2	
+	chown $(sudo stat -c %u $1):$(sudo stat -c %g $1) $2
+	chmod $(sudo stat -c %#a $1) $2	
 }
 
-PatchOverlayWithMagisk() {
-	echo "[*] Patching Overlay with Magisk"
-	#"add 0750 init magiskinit"
-	#"$SKIPOVERLAYD mkdir 0750 overlay.d"
-	#"mkdir 0750 overlay.d/sbin"
-	#"add 0644 overlay.d/sbin/magisk32.xz magisk32.xz"
-	#"$SKIP64 add 0644 overlay.d/sbin/magisk64.xz magisk64.xz"
-	echo "[*] Copy Magiskinit to init"
-	sudo mkdir $FIN/.backup	
-	cp magiskinit $FIN
-	SetPerm $FIN/init $FIN/magiskinit
-	mv $FIN/init $FIN/.backup
-	mv -f $FIN/magiskinit $FIN/init
-	SetPerm $FIN/sbin $FIN/.backup
-	chmod 000 -R $FIN/.backup	
+PatchOverlayWithFakeRamdisk() {
+	echo "[*] Patching Overlay with fake ramdisk.img"
+	mv $BASEDIR/ramdisk.img $BASEDIR/ramdisk.cpio.gz
+	$BB gzip -d $BASEDIR/ramdisk.cpio.gz
+	#mkdir -p $RAMDISKDIR
+	echo "[-] Extracting ramdisk.cpio to overlay System"
+	cd $FIN > /dev/null
+		cat $BASEDIR/ramdisk.cpio | $BB cpio -i > /dev/null 2>&1
+	cd - > /dev/null
+
+	SetPerm $ANDROIROOTDIR/init $FIN/init
+	
+	#chcon --reference=/opt/google/containers/android/rootfs/root/init /usr/local/crosswork/fin/init
+
+	#SetPerm $FIN/sbin $FIN/.backup
+	#chmod 000 -R $FIN/.backup
+	stat -c %C%u%g%#a $ANDROIROOTDIR/init
 	stat -c %C%u%g%#a $FIN/init
 
-	echo "[*] Create overlay.d for Magisk"
-	mkdir -p $FIN/overlay.d/sbin
-	SetPerm $FIN/sbin $FIN/overlay.d
-	SetPerm $FIN/sbin $FIN/overlay.d/sbin
-	cp magisk32 $FIN/overlay.d/sbin
-	SetPerm $FIN/sbin $FIN/overlay.d/sbin/magisk32
-	cp magisk64 $FIN/overlay.d/sbin
-	SetPerm $FIN/sbin $FIN/overlay.d/sbin/magisk64	
+	SetPerm $ANDROIROOTDIR/sbin $FIN/overlay.d
+	SetPerm $ANDROIROOTDIR/sbin $FIN/overlay.d/sbin
+	SetPerm $ANDROIROOTDIR/sbin $FIN/overlay.d/sbin/magisk32.xz
+	SetPerm $ANDROIROOTDIR/sbin $FIN/overlay.d/sbin/magisk64.xz
 }
 
 makeSQUASHFS() {
@@ -269,35 +285,41 @@ create_backup() {
 }
 
 setMagiskSQUASHFStoSYSTEM() {
+	echo "[*] Set Magisk SquashFS System"
 	mv $SYSRAWIMG.magisk $SYSRAWIMG
 }
 
-DownloadTools() {
-	curl -LO https://github.com/Magisk-Modules-Repo/busybox-ndk/raw/master/busybox-x86_64 busybox && chmod +x busybox
-}
-
-checksudo
+GainRoot
+ChangeLocation
 ProcessArguments $@
-exit 1
+
 #####
-$RemountDEVICE && RemountDEVICE && exit 1
+$RemountDrive && RemountDrive && exit 0
+$CleanUpMounts && CleanUpMounts && exit 0
+#####
 
-
-DownloadTools
+DownloadAssets
+CreateFakeRamdisk
+PatchFakeRamdisk
 
 CleanUpMounts
-PrepBusyBoxAndMagisk
-arch_detect
-RemountDEVICE
+RemountDrive
+
 CreateOverlayMounts
 read -p "Make your changes and Enter when finshed to continue" </dev/tty
-#ReadContextPerm
-#PatchOverlayWithMagisk
+PatchOverlayWithFakeRamdisk
+read -p "Make your changes and Enter when finshed to continue" </dev/tty
 makeSQUASHFS
 create_backup $SYSRAWIMG
 setMagiskSQUASHFStoSYSTEM
 CleanUpMounts
-exit 1
+
+exit 0
+
+#ReadContextPerm
+
+
+exit 0
 
 #cp --preserve=context
 sudo mv /media/$USER/fin/init /media/$USER/fin/.backup/init
