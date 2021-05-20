@@ -26,10 +26,11 @@ checksudo() {
 		fi
 		$SUDO cp "$0" $BASEDIR
 		$SUDO bash -c "exec $BASEDIR/$0 $@"
+		$SUDO kill -9 $PPID
 		echo "[!] to far"
 		exit
 	fi
-	kill -9 $PPID
+	
 	#$SUDO echo "cd $BASEDIR" > $BASEDIR/curdir.sh
 	#$SUDO chmod +x $BASEDIR/curdir.sh	
 	#source $BASEDIR/curdir.sh
