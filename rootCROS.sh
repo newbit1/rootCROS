@@ -25,8 +25,9 @@ checksudo() {
 			$SUDO mkdir -p $BASEDIR
 		fi
 		$SUDO cp "$0" $BASEDIR
-		$SUDO bash -c "exec $BASEDIR/$0 $@"
-		$SUDO kill -9 $PPID
+		$SUDO bash -c "exec $BASEDIR/$0 $@" & disown
+		
+		#$SUDO kill -9 $PPID
 		echo "[!] to far"
 		exit
 	fi
