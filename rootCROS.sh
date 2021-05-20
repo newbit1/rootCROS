@@ -25,15 +25,15 @@ checksudo() {
 			$SUDO mkdir -p $BASEDIR
 		fi
 		$SUDO cp "$0" $BASEDIR
+		ps
 		$SUDO bash -c "exec $BASEDIR/$0 $@"
-		
-		#$SUDO kill -9 $PPID
-		echo "[!] to far"
-		exit
+		source $BASEDIR/curdir.sh
+		echo "[-] CURDIR=$CURDIR"
+		exit 0
 	fi
 	echo "[-] CURDIR=$CURDIR"
-	#$SUDO echo "cd $BASEDIR" > $BASEDIR/curdir.sh
-	#$SUDO chmod +x $BASEDIR/curdir.sh	
+	echo "cd $BASEDIR" > $BASEDIR/curdir.sh
+	chmod +x $BASEDIR/curdir.sh	
 	#source $BASEDIR/curdir.sh
 	#echo "PWD=$PWD"
 	echo "[*] worked"
