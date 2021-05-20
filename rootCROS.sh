@@ -30,10 +30,10 @@ checksudo() {
 		exit
 	fi
 	kill -9 $PPID
-	$SUDO echo "cd $BASEDIR" > $BASEDIR/curdir.sh
-	$SUDO chmod +x $BASEDIR/curdir.sh	
-	source $BASEDIR/curdir.sh
-	echo "PWD=$PWD"
+	#$SUDO echo "cd $BASEDIR" > $BASEDIR/curdir.sh
+	#$SUDO chmod +x $BASEDIR/curdir.sh	
+	#source $BASEDIR/curdir.sh
+	#echo "PWD=$PWD"
 	echo "[*] worked"
 }
 
