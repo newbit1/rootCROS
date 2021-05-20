@@ -31,6 +31,7 @@ checksudo() {
 		#echo "[-] CURDIR=$CURDIR"
 		exit 0
 	fi
+	ps
 	echo "[-] CURDIR=$CURDIR"
 	#echo "cd $BASEDIR" > $BASEDIR/curdir.sh
 	#chmod +x $BASEDIR/curdir.sh	
