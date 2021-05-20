@@ -27,16 +27,16 @@ checksudo() {
 		$SUDO cp "$0" $BASEDIR
 		ps
 		$SUDO bash -c "exec $BASEDIR/$0 $@"
-		source $BASEDIR/curdir.sh
-		echo "[-] CURDIR=$CURDIR"
+		#source $BASEDIR/curdir.sh
+		#echo "[-] CURDIR=$CURDIR"
 		exit 0
 	fi
 	echo "[-] CURDIR=$CURDIR"
-	echo "cd $BASEDIR" > $BASEDIR/curdir.sh
-	chmod +x $BASEDIR/curdir.sh	
+	#echo "cd $BASEDIR" > $BASEDIR/curdir.sh
+	#chmod +x $BASEDIR/curdir.sh	
 	#source $BASEDIR/curdir.sh
 	#echo "PWD=$PWD"
-	echo "[*] worked"
+	#echo "[*] worked"
 	exit 1
 }
 

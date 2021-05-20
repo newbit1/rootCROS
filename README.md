@@ -4,6 +4,9 @@ curl -LO https://raw.githubusercontent.com/newbit1/rootCROS/master/rootCROS.sh &
 curl -LO https://github.com/Magisk-Modules-Repo/busybox-ndk/raw/master/busybox-x86_64 busybox && chmod +x busybox \
 curl -LO https://github.com/newbit1/rootCROS/raw/master/Magisk.zip \
 
+
+sudo curl https://raw.githubusercontent.com/newbit1/rootCROS/master/rootCROS.sh?_=$(date +%s.%N) > ./rootCROS.sh && sudo chmod +x ./rootCROS.sh
+
 sudo rm rootCROS.sh
 sudo curl -LO https://raw.githubusercontent.com/newbit1/rootCROS/master/rootCROS.sh && sudo chmod +x rootCROS.sh
 
@@ -11,6 +14,16 @@ sudo curl --location --silent "https://raw.githubusercontent.com/newbit1/rootCRO
 
 sudo curl -v -H "Cache-Control: no-cache" -LO https://raw.githubusercontent.com/newbit1/rootCROS/master/rootCROS.sh && sudo chmod +x rootCROS.sh
 sudo curl -LO https://raw.githubusercontent.com/newbit1/rootCROS/master/rootCROS.sh?$RANDOM && sudo chmod +x rootCROS.sh
+
+curl -H 'Authorization: token INSERTACCESSTOKENHERE' \
+  -H 'Accept: application/vnd.github.v3.raw' \
+  -O \
+  -L https://api.github.com/repos/owner/repo/contents/path
+  
+curl -H 'Accept: application/vnd.github.v3.raw' https://api.github.com/repos/newbit1/rootCROS/master/rootCROS.sh
+
+curl -L -O https://github.com/your/repo/raw/master/fetch_file.sh
+
 
 
 curl --location --silent "https://git.io/lsf-e2e?$RANDOM"
