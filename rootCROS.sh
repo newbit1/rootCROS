@@ -35,10 +35,10 @@ ProcessArguments() {
 		fi
 		cp "$0" $BASEDIR
 		echo "00=$0"
-		source "cd $BASEDIR"
+		source echo "cd $BASEDIR"
 		bash -c "exec $0 $@"
 		echo "[!] to far"
-		exit 1
+		exit 0
 	fi
 	echo "[*] worked"
 	
