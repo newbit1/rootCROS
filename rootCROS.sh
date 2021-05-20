@@ -314,31 +314,3 @@ sudo mv /media/$USER/ROOT-A1/opt/google/containers/android/system.raw.img /media
 sudo mv /media/$USER/ROOT-A1/opt/google/containers/android/system.raw.img.magisk /media/$USER/ROOT-A1/opt/google/containers/android/system.raw.img
 
 exit
-#export -p
-### for ADB
-## find setprop sys.usb.configfs 1
-## add setprop sys.usb.config adb
-## in init.usb.rc
-## or prop conf with magisk
-## default.prop
-persist.sys.usb.config=adb
-fstab.cheets
-chcon --reference=fstab.cheets default.prop
--rw-------. 1 655360 655360 u:object_r:rootfs:s0 1202 May 10 08:27 default.prop
-
-sudo umount fin && sudo rm -rf fin
-sudo chcon --reference=build.prop default.prop
-
-sudo chcon --reference=init.usb.configfs.rc init.usb.rc
-
-/media/newbit/ROOT-A/usr/share/arc/properties/default.prop
-
-find . -type f -exec grep -l "houdini" {} \;
-find . -type f -exec grep -l "persist.sys.usb.config" {} \;
-/init.environ.rc
-on init
-    export SYSTEMSERVERCLASSPATH /system/framework/services.jar:/system/framework/ethernet-service.jar:/system/framework/wifi-service.jar:/system/framework/com.android.location.provider.jar:/system/framework/org.chromium.arc.jar:/system/framework/org.chromium.arc.bridge.jar:/system/framework/org.chromium.arc.mojom.jar:/system/framework/arc-clipboard.jar:/system/framework/arc-services.jar:/system/framework/arcvold-binder.jar
-
-arc-services.vdex
-/system/framework/oat/x86_64/arc-services.odex
-/system/framework/oat/x86_64/arc-services.vdex
