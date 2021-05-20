@@ -25,7 +25,7 @@ checksudo() {
 			$SUDO mkdir -p $BASEDIR
 		fi
 		$SUDO cp "$0" $BASEDIR
-		$SUDO bash -c "exec $0 $@"
+		$SUDO bash -c "sudo exec $0 $@"
 		echo "[!] to far"
 		exit
 	fi
