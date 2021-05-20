@@ -36,9 +36,11 @@ ProcessArguments() {
 		cp "$0" $BASEDIR
 		echo "00=$0"
 		echo "cd $BASEDIR" > $BASEDIR/curdir.sh
-		#source $BASEDIR/curdir.sh
+		source $BASEDIR/curdir.sh
+		echo "PWD=$PWD"
 		
 		bash -c "exec $BASEDIR/curdir.sh"
+		echo "PWD=$PWD"
 		bash -c "exec -l $0 $@"
 		
 		echo "[!] to far"
