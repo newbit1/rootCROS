@@ -6,11 +6,34 @@
 
 
 checksudo() {
+	SUDO=""
+	WORKDIR=/usr/local
+	BASEDIR=$WORKDIR/crosswork
+	CURDIR="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+	
 	if [ $(id -u) != 0 ]; then
 	  echo "run sudo bash ./rootCROS.sh"
-	  sudo bash -c "exec $0 $@"
-	  exit 1
+	  #sudo bash -c "exec $0 $@"
+	  SUDO="sudo"
 	fi
+	
+	echo "[-] Switch to the location $BASEDIR"
+	echo "[-] CURDIR=$CURDIR"
+	set -x
+	if [ "$CURDIR" != "$BASEDIR" ]; then
+		if [ ! -e "$BASEDIR" ]; then
+			$SUDO mkdir -p $BASEDIR
+		fi
+		$SUDO cp "$0" $BASEDIR
+		$SUDO bash -c "exec $0 $@"
+		echo "[!] to far"
+		exit
+	fi
+	echo "cd $BASEDIR" > $BASEDIR/curdir.sh
+	chmod +x $BASEDIR/curdir.sh	
+	source $BASEDIR/curdir.sh
+	echo "PWD=$PWD"
+	echo "[*] worked"
 }
 
 ProcessArguments() {
@@ -20,37 +43,7 @@ ProcessArguments() {
 	
 	ADBWORKDIR=/opt/google/containers/android/rootfs/android-data/data/data/com.android.shell
 	ADBBASEDIR=$ADBWORKDIR/crosswork
-	
-	WORKDIR=/usr/local
-	BASEDIR=$WORKDIR/crosswork
-	
-	CURDIR="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
-	
-	echo "[-] Switch to the location $BASEDIR"
-	echo "[-] CURDIR=$CURDIR"
-	set -x
-	if [ "$CURDIR" != "$BASEDIR" ]; then
-		if [ ! -e "$BASEDIR" ]; then
-			mkdir -p $BASEDIR
-		fi
-		cp "$0" $BASEDIR
-		echo "00=$0"
-		echo "cd $BASEDIR" > $BASEDIR/curdir.sh
-		chmod +x $BASEDIR/curdir.sh
-		
-		source $BASEDIR/curdir.sh
-		echo "PWD=$PWD"
-		
-		bash -c "exec $BASEDIR/curdir.sh"
-		echo "PWD=$PWD"
-		bash -c "exec -l $0 $@"
-		
-		echo "[!] to far"
-		exit 0
-	fi
-	echo "[*] worked"
-	
-	exit 0
+
 	RECOVERYIMG=/home/$USER/Downloads/chromeos_13816.64.0_rammus_recovery_stable-channel_mp-v2.bin.img
 	# ROOT-A contains the android container system and vendor
 	#ROOTA=/dev/loop0p3
@@ -279,6 +272,7 @@ DownloadTools() {
 }
 
 checksudo
+exit
 ProcessArguments $@
 exit 1
 #####
