@@ -33,10 +33,15 @@ ProcessArguments() {
 		if [ ! -e "$BASEDIR" ]; then
 			mkdir -p $BASEDIR
 		fi
+		cp "$0" $BASEDIR
+		echo "00=$0"
 		cd $BASEDIR
-		bash -c exec $0 $@
-	fi	
-
+		bash -c exec "$0 $@"
+		echo "[!] to far"
+	fi
+	echo "[*] worked"
+	
+	exit 1
 	RECOVERYIMG=/home/$USER/Downloads/chromeos_13816.64.0_rammus_recovery_stable-channel_mp-v2.bin.img
 	# ROOT-A contains the android container system and vendor
 	#ROOTA=/dev/loop0p3

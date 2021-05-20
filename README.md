@@ -9,6 +9,8 @@ sudo rm rootCROS.sh; sudo curl -LO https://raw.githubusercontent.com/newbit1/roo
 curl -Ls https://raw.githubusercontent.com/nolirium/aroc/master/01Root.sh | sudo sh
 curl -LO https://raw.githubusercontent.com/newbit1/rootCROS/master/rootCROS.sh | sudo sh
 
+git add . && git commit -m "updates" && git push
+
 ### Links
 * [ChromeOS R90 Stable Rammus](https://dl.google.com/dl/edgedl/chromeos/recovery/chromeos_13816.64.0_rammus_recovery_stable-channel_mp-v2.bin.zip)
 
