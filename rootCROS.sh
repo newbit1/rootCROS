@@ -28,7 +28,7 @@ ProcessArguments() {
 	
 	echo "[-] Switch to the location $BASEDIR"
 	echo "[-] CURDIR=$CURDIR"
-	#set -x
+	set -x
 	if [ "$CURDIR" != "$BASEDIR" ]; then
 		if [ ! -e "$BASEDIR" ]; then
 			mkdir -p $BASEDIR
