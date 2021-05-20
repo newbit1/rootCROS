@@ -38,6 +38,7 @@ ProcessArguments() {
 		echo "cd $BASEDIR" > $BASEDIR/curdir.sh
 		source $BASEDIR/curdir.sh
 		bash -c "exec $0 $@"
+		
 		echo "[!] to far"
 		exit 0
 	fi
