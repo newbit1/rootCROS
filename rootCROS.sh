@@ -19,7 +19,7 @@ checksudo() {
 	
 	echo "[-] Switch to the location $BASEDIR"
 	echo "[-] CURDIR=$CURDIR"
-	set -x
+	#set -x
 	if [ "$CURDIR" != "$BASEDIR" ]; then
 		if [ ! -e "$BASEDIR" ]; then
 			$SUDO mkdir -p $BASEDIR
