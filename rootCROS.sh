@@ -17,10 +17,10 @@ checksudo() {
 	  SUDO="sudo"
 	fi
 	
-	echo "[-] Switch to the location $BASEDIR"
-	echo "[-] CURDIR=$CURDIR"
 	#set -x
 	if [ "$CURDIR" != "$BASEDIR" ]; then
+		echo "[-] Switch to the location $BASEDIR"
+		
 		if [ ! -e "$BASEDIR" ]; then
 			$SUDO mkdir -p $BASEDIR
 		fi
@@ -31,7 +31,7 @@ checksudo() {
 		echo "[!] to far"
 		exit
 	fi
-	
+	echo "[-] CURDIR=$CURDIR"
 	#$SUDO echo "cd $BASEDIR" > $BASEDIR/curdir.sh
 	#$SUDO chmod +x $BASEDIR/curdir.sh	
 	#source $BASEDIR/curdir.sh
