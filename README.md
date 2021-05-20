@@ -8,6 +8,8 @@ sudo rm rootCROS.sh
 sudo curl -LO https://raw.githubusercontent.com/newbit1/rootCROS/master/rootCROS.sh && sudo chmod +x rootCROS.sh
 
 sudo curl -v -H "Cache-Control: no-cache" -LO https://raw.githubusercontent.com/newbit1/rootCROS/master/rootCROS.sh && sudo chmod +x rootCROS.sh
+sudo curl -LO https://raw.githubusercontent.com/newbit1/rootCROS/master/rootCROS.sh?$RANDOM && sudo chmod +x rootCROS.sh
+
 
 curl --location --silent "https://git.io/lsf-e2e?$RANDOM"
 
