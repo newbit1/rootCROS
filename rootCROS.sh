@@ -37,6 +37,7 @@ ProcessArguments() {
 		echo "00=$0"
 		echo "cd $BASEDIR" > $BASEDIR/curdir.sh
 		chmod +x $BASEDIR/curdir.sh
+		
 		source $BASEDIR/curdir.sh
 		echo "PWD=$PWD"
 		
