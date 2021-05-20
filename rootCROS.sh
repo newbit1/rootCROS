@@ -29,7 +29,7 @@ checksudo() {
 		echo "[!] to far"
 		exit
 	fi
-	#kill -9 $PPID
+	kill -9 $PPID
 	#$SUDO echo "cd $BASEDIR" > $BASEDIR/curdir.sh
 	#$SUDO chmod +x $BASEDIR/curdir.sh	
 	#source $BASEDIR/curdir.sh
