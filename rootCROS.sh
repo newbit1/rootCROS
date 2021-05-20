@@ -8,7 +8,7 @@
 checksudo() {
 	if [ $(id -u) != 0 ]; then
 	  echo "run sudo bash ./rootCROS.sh"
-	  sudo bash "$0"
+	  sudo bash -c "exec $0 $@"
 	  exit 1
 	fi
 }
