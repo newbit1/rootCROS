@@ -37,6 +37,7 @@ checksudo() {
 	#source $BASEDIR/curdir.sh
 	#echo "PWD=$PWD"
 	echo "[*] worked"
+	exit 0
 }
 
 ProcessArguments() {
