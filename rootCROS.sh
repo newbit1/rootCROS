@@ -17,7 +17,7 @@ checksudo() {
 	  SUDO="sudo"
 	fi
 	
-	#set -x
+	set -x
 	if [ "$CURDIR" != "$BASEDIR" ]; then
 		echo "[-] Switch to the location $BASEDIR"
 		
@@ -25,7 +25,7 @@ checksudo() {
 			$SUDO mkdir -p $BASEDIR
 		fi
 		$SUDO cp "$0" $BASEDIR
-		$SUDO bash -c "exec $BASEDIR/$0 $@" & disown
+		$SUDO bash -c "exec $BASEDIR/$0 $@"
 		
 		#$SUDO kill -9 $PPID
 		echo "[!] to far"
