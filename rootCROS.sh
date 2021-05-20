@@ -28,7 +28,7 @@ checksudo() {
 		$SUDO echo "cd $BASEDIR" > $BASEDIR/curdir.sh
 		$SUDO chmod +x $BASEDIR/curdir.sh	
 		source $BASEDIR/curdir.sh
-		$SUDO bash -c "sudo exec $0 $@"
+		$SUDO bash -c "exec $0 $@"
 		echo "[!] to far"
 		exit
 	fi
