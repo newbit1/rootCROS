@@ -42,7 +42,7 @@ ProcessArguments() {
 	fi
 	echo "[*] worked"
 	
-	exit 1
+	exit 0
 	RECOVERYIMG=/home/$USER/Downloads/chromeos_13816.64.0_rammus_recovery_stable-channel_mp-v2.bin.img
 	# ROOT-A contains the android container system and vendor
 	#ROOTA=/dev/loop0p3
