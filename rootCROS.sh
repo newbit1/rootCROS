@@ -35,7 +35,7 @@ ProcessArguments() {
 		fi
 		cp "$0" $BASEDIR
 		echo "00=$0"
-		cd $BASEDIR
+		source "cd $BASEDIR"
 		bash -c "exec $0 $@"
 		echo "[!] to far"
 		exit 1
