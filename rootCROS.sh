@@ -36,7 +36,8 @@ ProcessArguments() {
 		cp "$0" $BASEDIR
 		echo "00=$0"
 		echo "cd $BASEDIR" > $BASEDIR/curdir.sh
-		source $BASEDIR/curdir.sh
+		#source $BASEDIR/curdir.sh
+		
 		bash -c "exec $BASEDIR/curdir.sh"
 		bash -c "exec -l $0 $@"
 		
