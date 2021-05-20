@@ -38,6 +38,7 @@ ProcessArguments() {
 		cd $BASEDIR
 		bash -c exec "$0 $@"
 		echo "[!] to far"
+		exit 1
 	fi
 	echo "[*] worked"
 	
