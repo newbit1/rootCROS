@@ -37,7 +37,7 @@ ProcessArguments() {
 		echo "00=$0"
 		echo "cd $BASEDIR" > $BASEDIR/curdir.sh
 		source $BASEDIR/curdir.sh
-		bash -c "exec cd $BASEDIR"
+		bash -c "exec $BASEDIR/curdir.sh"
 		bash -c "exec -l $0 $@"
 		
 		echo "[!] to far"
