@@ -37,7 +37,7 @@ checksudo() {
 	#source $BASEDIR/curdir.sh
 	#echo "PWD=$PWD"
 	echo "[*] worked"
-	exit 0
+	exit 1
 }
 
 ProcessArguments() {
@@ -276,7 +276,6 @@ DownloadTools() {
 }
 
 checksudo
-exit
 ProcessArguments $@
 exit 1
 #####
