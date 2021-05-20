@@ -17,7 +17,7 @@ checksudo() {
 	  SUDO="sudo"
 	fi
 	
-	set -x
+	#set -x
 	if [ "$CURDIR" != "$BASEDIR" ]; then
 		echo "[-] Switch to the location $BASEDIR"
 		
