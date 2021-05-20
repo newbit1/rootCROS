@@ -7,6 +7,8 @@ curl -LO https://github.com/newbit1/rootCROS/raw/master/Magisk.zip \
 sudo rm rootCROS.sh
 sudo curl -LO https://raw.githubusercontent.com/newbit1/rootCROS/master/rootCROS.sh && sudo chmod +x rootCROS.sh
 
+sudo curl --location --silent "https://raw.githubusercontent.com/newbit1/rootCROS/master/rootCROS.sh?$RANDOM" > ./rootCROS.sh && sudo chmod +x ./rootCROS.sh
+
 sudo curl -v -H "Cache-Control: no-cache" -LO https://raw.githubusercontent.com/newbit1/rootCROS/master/rootCROS.sh && sudo chmod +x rootCROS.sh
 sudo curl -LO https://raw.githubusercontent.com/newbit1/rootCROS/master/rootCROS.sh?$RANDOM && sudo chmod +x rootCROS.sh
 
