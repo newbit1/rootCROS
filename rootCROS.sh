@@ -289,7 +289,6 @@ on post-fs-data
     start logd
     rm /dev/.magisk_unblock
     start QOE79THp1LNiWLP
-    start magiskdaemon
     wait /dev/.magisk_unblock 40
     rm /dev/.magisk_unblock
 
@@ -298,7 +297,20 @@ service QOE79THp1LNiWLP /sbin/magisk --post-fs-data
     seclabel u:r:magisk:s0
     oneshot
 
+on property:init.svc.zygote=running
+    chown root root /sbin/magisk32
+    chown root root /sbin/magisk64
+    chown root root /sbin/magiskinit
+    write /sys/fs/selinux/enforce 0
+    start magiskdaemon
+    start q2RZ4jzDFsBXQT7    
+
 service magiskdaemon /sbin/magisk --daemon
+    user root
+    seclabel u:r:magisk:s0
+    oneshot
+
+service magiskpolicy /sbin/magiskpolicy --live --magisk
     user root
     seclabel u:r:magisk:s0
     oneshot
@@ -324,79 +336,77 @@ PatchOverlayWithFakeRamdisk() {
 	mv $BASEDIR/ramdisk.img $BASEDIR/ramdisk.cpio.gz
 	$BB gzip -fd $BASEDIR/ramdisk.cpio.gz
 	mkdir -p $RAMDISKDIR
-	#set -x
 	echo "[-] Extracting ramdisk.cpio"
-	cd $FIN > /dev/null
-	#cd $RAMDISKDIR > /dev/null
-		rm ./init
+	#cd $FIN > /dev/null
+	cd $RAMDISKDIR > /dev/null
+		#rm ./init
 		cat $BASEDIR/ramdisk.cpio | $BB cpio -i > /dev/null 2>&1
-		cp ./overlay.d/sbin/magisk* ./sbin
+		#cp ./overlay.d/sbin/magisk* ./sbin
 	cd - > /dev/null
 	
-	SetPerm $ANDROIROOTDIR/init.rc $FIN/init
+	mv $RAMDISKDIR/init $RAMDISKDIR/overlay.d/sbin/magiskinit
 	
-	#echo "[*] Copy Ramdisk Files to /"
-	
-	
-	#mv $RAMDISKDIR/init $RAMDISKDIR/overlay.d/sbin/magiskinit
-	
-	#echo "[*] Copy Ramdisk Files to /sbin"
-	#cp -r $RAMDISKDIR/overlay.d/sbin/* $FIN/sbin/
+	echo "[*] Copy Ramdisk Files to /sbin"
+	cp -r $RAMDISKDIR/overlay.d/sbin/* $FIN/sbin/
 	#cp -r $RAMDISKDIR/overlay.d/* $FIN/
 	
-	#cd $FIN/sbin > /dev/null
-		#$BB unxz -k magisk64.xz
-		#$BB unxz -k magisk32.xz
-		#chcon u:object_r:magisk_exec:s0 ./magisk64
+	cd $FIN/sbin > /dev/null
+		$BB unxz magisk64.xz
+		$BB unxz magisk32.xz
+		chcon u:object_r:magisk_exec:s0 ./magisk64
 		#chcon u:object_r:system_file:s0 ./magisk64
+		chcon u:object_r:magisk_exec:s0 ./magisk32
 		#chcon u:object_r:system_file:s0 ./magisk32
 		
 		#SetOwner $FIN/init ./magisk64
-		#SetOwner $FIN/init ./magisk32		
-		#chmod 0755 ./magisk64
-		#chmod 0755 ./magisk32
+		#SetOwner $FIN/init ./magisk32	
+		chown 0:0 ./magisk64
+		chown 0:0 ./magisk32
+		chmod 0777 ./magisk64
+		chmod 0777 ./magisk32
 		
 		#ln -s ./magisk32 ./magisk
-		#ln -sf ./magisk64 ./magisk
-		#ln -sf ./magisk ./su
-		#ln -sf ./magisk ./resetprop
-		#ln -sf ./magisk ./magiskhide
+		ln -sf ./magisk64 ./magisk
+		ln -sf ./magisk ./su
+		ln -sf ./magisk ./resetprop
+		ln -sf ./magisk ./magiskhide
 		
-		#SetOwner $FIN/init ./magisk
-		#SetOwner $FIN/init ./su
-		#SetOwner $FIN/init ./resetprop
-		#SetOwner $FIN/init ./magiskhide
+		SetOwner $FIN/init ./magisk
+		SetOwner $FIN/init ./su
+		SetOwner $FIN/init ./resetprop
+		SetOwner $FIN/init ./magiskhide
 		
-		#chcon u:object_r:system_file:s0 ./magiskinit
+		chcon u:object_r:system_file:s0 ./magiskinit
 		#SetOwner $FIN/init ./magiskinit
-		#chmod 0755 ./magiskinit
-		#ln -sf ./magiskinit ./magiskpolicy
-	#cd - > /dev/null
+		chown 0:0 ./magiskinit
+		chmod 0777 ./magiskinit
+		ln -sf ./magiskinit ./magiskpolicy
+	cd - > /dev/null
 	
+	if [ ! -e "$ANDROIDATADIR/data/adb/magisk" ]; then
+		mkdir -p $ANDROIDATADIR/data/adb/magisk
+		mkdir -p $ANDROIDATADIR/data/adb/modules
+		mkdir -p $ANDROIDATADIR/data/adb/post-fs-data.d
+		mkdir -p $ANDROIDATADIR/data/adb/services.d
 	
-	#mkdir -p $ANDROIDATADIR/data/adb/magisk
-	#mkdir -p $ANDROIDATADIR/data/adb/modules
-	#mkdir -p $ANDROIDATADIR/data/adb/post-fs-data.d
-	#mkdir -p $ANDROIDATADIR/data/adb/services.d
-	
-	#cd $ANDROIDATADIR/data/adb > /dev/null
-	#	chcon u:object_r:system_file:s0 ./magisk
-	#	chcon u:object_r:system_file:s0 ./modules
-	#	chcon u:object_r:adb_data_file:s0 ./post-fs-data.d
-	#	chcon u:object_r:adb_data_file:s0 ./services.d
-	#	
-	#	SetOwner $ANDROIDATADIR/data/adb ./magisk
-	#	SetOwner $ANDROIDATADIR/data/adb ./modules
-	#	SetOwner $ANDROIDATADIR/data/adb ./post-fs-data.d
-	#	SetOwner $ANDROIDATADIR/data/adb ./services.d
-	#	
-	#	chmod 0755 ./magisk
-	#	chmod 0755 ./modules
-	#	chmod 0755 ./post-fs-data.d
-	#	chmod 0755 ./services.d				
-	#cd - > /dev/null
-	
-	#patch_init
+		cd $ANDROIDATADIR/data/adb > /dev/null
+			chcon u:object_r:system_file:s0 ./magisk
+			chcon u:object_r:system_file:s0 ./modules
+			chcon u:object_r:adb_data_file:s0 ./post-fs-data.d
+			chcon u:object_r:adb_data_file:s0 ./services.d
+
+			SetOwner $ANDROIDATADIR/data/adb ./magisk
+			SetOwner $ANDROIDATADIR/data/adb ./modules
+			SetOwner $ANDROIDATADIR/data/adb ./post-fs-data.d
+			SetOwner $ANDROIDATADIR/data/adb ./services.d
+
+			chmod 0755 ./magisk
+			chmod 0755 ./modules
+			chmod 0755 ./post-fs-data.d
+			chmod 0755 ./services.d				
+		cd - > /dev/null
+	fi
+	patch_init
 	#cat $FIN/init.rc
 }
 
@@ -412,7 +422,11 @@ PatchSELinux() {
 
 makeSQUASHFS() {
 	echo "[-] Generating SquashFS with Magisk"
-	mksquashfs $FIN $SYSRAWIMG.magisk
+	rm $SYSRAWIMG
+	mksquashfs $FIN $SYSRAWIMG
+	echo "[*] Set Magisk SquashFS System"
+	echo "[*] Change Context to $(stat -c %C $VENRAWIMG)"
+	chcon --reference=$VENRAWIMG $SYSRAWIMG
 }
 
 create_backup() {
@@ -428,13 +442,6 @@ create_backup() {
 	else
 		echo "[-] $FILE Backup exists already"
 	fi
-}
-
-setMagiskSQUASHFStoSYSTEM() {
-	echo "[*] Set Magisk SquashFS System"
-	mv $SYSRAWIMG.magisk $SYSRAWIMG
-	echo "[*] Change Context to $(stat -c %C $VENRAWIMG)"
-	chcon --reference=$VENRAWIMG $SYSRAWIMG
 }
 
 restore_backup() {
@@ -484,9 +491,8 @@ CreateOverlayMounts
 PatchOverlayWithFakeRamdisk
 PatchSELinux
 read -p "Make your changes and Enter when finshed to continue" </dev/tty
-makeSQUASHFS
 create_backup $SYSRAWIMG
-setMagiskSQUASHFStoSYSTEM
+makeSQUASHFS	
 CleanUpMounts
 rm -r $BASEDIR/ramdisk.cpio > /dev/null 2>&1 &
 rm -r $TMPDIR > /dev/null 2>&1 &
