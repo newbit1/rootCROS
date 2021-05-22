@@ -35,7 +35,6 @@ ChangeLocation() {
 		cp "$0" $BASEDIR
 		cd $BASEDIR
 		echo "[*] Re-Execute the script proper"
-		echo "restore1=$restore"
 		bash -c "exec ./$0 $@"
 		exit 0
 	fi
@@ -51,7 +50,7 @@ ProcessArguments() {
 	if [ -z $restore ]; then
 		restore=false
 	fi
-	restore=true
+	#restore=true
 	# Overlay Directorys
 	FM=$BASEDIR/FM
 	TO=$BASEDIR/to
@@ -64,6 +63,8 @@ ProcessArguments() {
 	ANDROIROOTDIR=/opt/google/containers/android/rootfs/root
 	SYSRAWIMG=/opt/google/containers/android/system.raw.img
 	VENRAWIMG=/opt/google/containers/android/vendor.raw.img
+	POLICY=/etc/selinux/arc/policy/policy.30
+	POLICYCONREF=/etc/selinux/arc/contexts/files/file_contexts
 	
 	#RECOVERYIMG=/home/$USER/Downloads/chromeos_13816.64.0_rammus_recovery_stable-channel_mp-v2.bin.img
 	# ROOT-A contains the android container system and vendor
@@ -87,7 +88,6 @@ ProcessArguments() {
 		restore=true
 	fi
 	
-	echo "at0=$@"
 	export FM
 	export TO
 	export TEMP
@@ -100,6 +100,7 @@ ProcessArguments() {
 	export ANDROIDATADIR
 	export SYSRAWIMG
 	export VENRAWIMG
+	export POLICY
 
 	export ADBWORKDIR
 	export ADBBASEDIR
@@ -185,8 +186,7 @@ PatchFakeRamdisk() {
 	adb push rootAVD.sh $ADBBASEDIR
 	adb push ramdisk.img $ADBBASEDIR
 	adb push Magisk.zip $ADBBASEDIR
-	adb shell sh $ADBBASEDIR/rootAVD.sh $@	
-	#$ROOTAVD $BASEDIR/ramdisk.img
+	adb shell sh $ADBBASEDIR/rootAVD.sh $@
 	adb pull $ADBBASEDIR/ramdiskpatched4AVD.img $BASEDIR/ramdisk.img
 	adb pull $ADBBASEDIR/Magisk.apk
 	echo "[*] Trying to install Magisk.apk"
@@ -211,16 +211,16 @@ CleanUp() {
 }
 
 CleanUpMounts() {
-	CleanUp $FM
-	CleanUp $TO
-	CleanUp $TEMP
+	#CleanUp $FM
+	#CleanUp $TO
+	#CleanUp $TEMP
 	CleanUp $FIN
 }
 
 CreateOverlayMounts() {
-	mkdir $FM
-	mkdir $TO
-	mkdir $TEMP
+	#mkdir $FM
+	#mkdir $TO
+	#mkdir $TEMP
 	mkdir $FIN
 	#-o context=system_u:object_r:public_content_t:s0 /dev/sdb1
 	#drwxr-xr-x. 17 android-root android-root u:object_r:rootfs:s0 909 May 17 09:21 /opt/google/containers/android/rootfs/root/
@@ -229,13 +229,6 @@ CreateOverlayMounts() {
 	#mount -t overlay -o lowerdir=$FM,upperdir=$TO,workdir=$TEMP overlay $FIN
 	#overlay on /usr/local/crosswork/fin type overlay (rw,relatime,lowerdir=/usr/local/crosswork/FM,upperdir=/usr/local/crosswork/to,workdir=/usr/local/crosswork/temp)
 	unsquashfs -f -d $FIN $SYSRAWIMG
-}
-
-MountAndroidRaws() {
-	mount /media/newbit/ROOT-A/opt/google/containers/android/system.raw.img /media/newbit/ROOT-A/opt/google/containers/android/rootfs -t squashfs -o loop
-	mount /media/newbit/ROOT-A/opt/google/containers/android/vendor.raw.img /media/newbit/ROOT-A/opt/google/containers/android/rootfs/vendor -t squashfs -o loop
-	umount /media/newbit/ROOT-A/opt/google/containers/android/vendor.raw.img
-	umount /media/newbit/ROOT-A/opt/google/containers/android/system.raw.img
 }
 
 ReadContextPerm() {
@@ -296,6 +289,7 @@ on post-fs-data
     start logd
     rm /dev/.magisk_unblock
     start QOE79THp1LNiWLP
+    start magiskdaemon
     wait /dev/.magisk_unblock 40
     rm /dev/.magisk_unblock
 
@@ -305,11 +299,6 @@ service QOE79THp1LNiWLP /sbin/magisk --post-fs-data
     oneshot
 
 service magiskdaemon /sbin/magisk --daemon
-    user root
-    seclabel u:r:magisk:s0
-    oneshot
-    
-service magiskpolicy /sbin/magiskpolicy --live --magisk
     user root
     seclabel u:r:magisk:s0
     oneshot
@@ -337,70 +326,88 @@ PatchOverlayWithFakeRamdisk() {
 	mkdir -p $RAMDISKDIR
 	#set -x
 	echo "[-] Extracting ramdisk.cpio"
-	#cd $FIN > /dev/null
-	cd $RAMDISKDIR > /dev/null
+	cd $FIN > /dev/null
+	#cd $RAMDISKDIR > /dev/null
+		rm ./init
 		cat $BASEDIR/ramdisk.cpio | $BB cpio -i > /dev/null 2>&1
+		cp ./overlay.d/sbin/magisk* ./sbin
 	cd - > /dev/null
 	
-	mv $RAMDISKDIR/init $RAMDISKDIR/overlay.d/sbin/magiskinit
+	SetPerm $ANDROIROOTDIR/init.rc $FIN/init
 	
-	echo "[*] Copy Ramdisk Files to /sbin"
-	cp -r $RAMDISKDIR/overlay.d/sbin/* $FIN/sbin/
+	#echo "[*] Copy Ramdisk Files to /"
 	
-	cd $FIN/sbin > /dev/null
-		$BB unxz magisk64.xz
-		$BB unxz magisk32.xz
+	
+	#mv $RAMDISKDIR/init $RAMDISKDIR/overlay.d/sbin/magiskinit
+	
+	#echo "[*] Copy Ramdisk Files to /sbin"
+	#cp -r $RAMDISKDIR/overlay.d/sbin/* $FIN/sbin/
+	#cp -r $RAMDISKDIR/overlay.d/* $FIN/
+	
+	#cd $FIN/sbin > /dev/null
+		#$BB unxz -k magisk64.xz
+		#$BB unxz -k magisk32.xz
 		#chcon u:object_r:magisk_exec:s0 ./magisk64
-		chcon u:object_r:system_file:s0 ./magisk64
-		chcon u:object_r:system_file:s0 ./magisk32
+		#chcon u:object_r:system_file:s0 ./magisk64
+		#chcon u:object_r:system_file:s0 ./magisk32
 		
-		SetOwner $FIN/init ./magisk64
-		SetOwner $FIN/init ./magisk32		
-		chmod 0755 ./magisk64
-		chmod 0755 ./magisk32
+		#SetOwner $FIN/init ./magisk64
+		#SetOwner $FIN/init ./magisk32		
+		#chmod 0755 ./magisk64
+		#chmod 0755 ./magisk32
 		
 		#ln -s ./magisk32 ./magisk
-		ln -sf ./magisk64 ./magisk
-		ln -sf ./magisk ./su
-		ln -sf ./magisk ./resetprop
-		ln -sf ./magisk ./magiskhide
+		#ln -sf ./magisk64 ./magisk
+		#ln -sf ./magisk ./su
+		#ln -sf ./magisk ./resetprop
+		#ln -sf ./magisk ./magiskhide
 		
 		#SetOwner $FIN/init ./magisk
 		#SetOwner $FIN/init ./su
 		#SetOwner $FIN/init ./resetprop
 		#SetOwner $FIN/init ./magiskhide
 		
-		chcon u:object_r:system_file:s0 ./magiskinit
-		SetOwner $FIN/init ./magiskinit
-		chmod 0755 ./magiskinit
-		ln -sf ./magiskinit ./magiskpolicy
-	cd - > /dev/null
+		#chcon u:object_r:system_file:s0 ./magiskinit
+		#SetOwner $FIN/init ./magiskinit
+		#chmod 0755 ./magiskinit
+		#ln -sf ./magiskinit ./magiskpolicy
+	#cd - > /dev/null
 	
-	mkdir -p $ANDROIDATADIR/data/adb/magisk
-	mkdir -p $ANDROIDATADIR/data/adb/modules
-	mkdir -p $ANDROIDATADIR/data/adb/post-fs-data.d
-	mkdir -p $ANDROIDATADIR/data/adb/services.d
 	
-	cd $ANDROIDATADIR/data/adb > /dev/null
-		#chcon u:object_r:magisk_file:s0 ./magisk
-		chcon u:object_r:system_file:s0 ./magisk
-		chcon u:object_r:system_file:s0 ./modules
-		chcon u:object_r:adb_data_file:s0 ./post-fs-data.d
-		chcon u:object_r:adb_data_file:s0 ./services.d
-		
-		SetOwner $ANDROIDATADIR/data/adb ./magisk
-		SetOwner $ANDROIDATADIR/data/adb ./modules
-		SetOwner $ANDROIDATADIR/data/adb ./post-fs-data.d
-		SetOwner $ANDROIDATADIR/data/adb ./services.d
-		
-		chmod 0755 ./magisk
-		chmod 0755 ./modules
-		chmod 0755 ./post-fs-data.d
-		chmod 0755 ./services.d				
-	cd - > /dev/null
+	#mkdir -p $ANDROIDATADIR/data/adb/magisk
+	#mkdir -p $ANDROIDATADIR/data/adb/modules
+	#mkdir -p $ANDROIDATADIR/data/adb/post-fs-data.d
+	#mkdir -p $ANDROIDATADIR/data/adb/services.d
 	
-	patch_init
+	#cd $ANDROIDATADIR/data/adb > /dev/null
+	#	chcon u:object_r:system_file:s0 ./magisk
+	#	chcon u:object_r:system_file:s0 ./modules
+	#	chcon u:object_r:adb_data_file:s0 ./post-fs-data.d
+	#	chcon u:object_r:adb_data_file:s0 ./services.d
+	#	
+	#	SetOwner $ANDROIDATADIR/data/adb ./magisk
+	#	SetOwner $ANDROIDATADIR/data/adb ./modules
+	#	SetOwner $ANDROIDATADIR/data/adb ./post-fs-data.d
+	#	SetOwner $ANDROIDATADIR/data/adb ./services.d
+	#	
+	#	chmod 0755 ./magisk
+	#	chmod 0755 ./modules
+	#	chmod 0755 ./post-fs-data.d
+	#	chmod 0755 ./services.d				
+	#cd - > /dev/null
+	
+	#patch_init
 	#cat $FIN/init.rc
+}
+
+PatchSELinux() {
+	#adb push $POLICY $ADBBASEDIR
+	echo "[*] Inject SELinux with Magisk built-in rules"
+	adb shell mv $ADBBASEDIR/magiskinit $ADBBASEDIR/magiskpolicy
+	adb shell $ADBBASEDIR/magiskpolicy --save $ADBBASEDIR/policy.30.magisk --magisk
+	create_backup $POLICY
+	adb pull $ADBBASEDIR/policy.30.magisk $POLICY	
+	SetPerm $POLICYCONREF $POLICY
 }
 
 makeSQUASHFS() {
@@ -417,7 +424,7 @@ create_backup() {
 
 	if [ ! -e "$BACKUPFILE" ]; then
 		echo "[*] create Backup File of $FILE"
-		mv $SYSRAWIMG $BACKUPFILE
+		mv $1 $BACKUPFILE
 	else
 		echo "[-] $FILE Backup exists already"
 	fi
@@ -434,13 +441,17 @@ restore_backup() {
 	local BACKUPFILE=""
 	local FILE=""
 	FILE="$1"
+	CONTEXTREF="$1"
 	BACKUPFILE="$FILE.backup"
 
 	if [ -e "$BACKUPFILE" ]; then
 		echo "[*] Restore Backup File of $FILE"
-		rm $SYSRAWIMG
-		mv $BACKUPFILE $SYSRAWIMG
-		chcon --reference=$VENRAWIMG $SYSRAWIMG
+		rm $1
+		cp $BACKUPFILE $1
+		if [[ ! "$CONTEXTREF" == "" ]]; then
+			chcon --reference=$CONTEXTREF $1
+		fi
+		echo "[*] Backup remains"
 	else
 		echo "[!] No Backup to restore"
 	fi
@@ -454,7 +465,7 @@ ProcessArguments $@
 #####
 $RemountDrive && RemountDrive && exit 0
 $CleanUpMounts && CleanUpMounts && exit 0
-$restore && RemountDrive && restore_backup $SYSRAWIMG && exit 0
+$restore && RemountDrive && restore_backup $SYSRAWIMG $VENRAWIMG && exit 0
 #####
 
 DownloadAssets
@@ -469,8 +480,9 @@ CleanUpMounts
 RemountDrive
 
 CreateOverlayMounts
-read -p "Make your changes and Enter when finshed to continue" </dev/tty
+#read -p "Make your changes and Enter when finshed to continue" </dev/tty
 PatchOverlayWithFakeRamdisk
+PatchSELinux
 read -p "Make your changes and Enter when finshed to continue" </dev/tty
 makeSQUASHFS
 create_backup $SYSRAWIMG
