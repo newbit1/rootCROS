@@ -198,7 +198,7 @@ PatchFakeRamdisk() {
 	adb pull $ADBBASEDIR/busybox
 	chmod +x $BASEDIR/busybox
 	echo "[*] Trying to install Magisk.apk"
-	#adb install -r -d Magisk.apk
+	adb install -r -d Magisk.apk
 }
 
 RemountDrive() {
