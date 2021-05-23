@@ -50,7 +50,7 @@ ProcessArguments() {
 	if [ -z $restore ]; then
 		restore=false
 	fi
-	restore=true
+	#restore=true
 	if [ -z $DEBUG ]; then
 		DEBUG=false
 	fi
