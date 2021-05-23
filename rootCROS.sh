@@ -57,9 +57,6 @@ ProcessArguments() {
 	#DEBUG=true
 	
 	# Overlay Directorys
-	FM=$BASEDIR/FM
-	TO=$BASEDIR/to
-	TEMP=$BASEDIR/temp
 	FIN=$BASEDIR/fin
 	DRIVE=/
 	
@@ -93,9 +90,6 @@ ProcessArguments() {
 		restore=true
 	fi
 	
-	export FM
-	export TO
-	export TEMP
 	export FIN
 	export DRIVE
 	
@@ -151,16 +145,46 @@ DownloadAssets() {
 	export BB	
 }
 
+InitADB() {
+	echo "[*] Init ADB"
+	ADBDISABLED=false
+	ADBWORKS=false
+	CONNECTTRYS=2
+	adb start-server
+	
+	while [ "$ADBWORKS" != "true" ];do
+		if [[ "$ADBWORKS" == *"devices/emulators"* ]]; then
+			ADBDISABLED=true
+			echo "ADBWORKS=$ADBWORKS"
+			echo "[!] Device has no ADB Service running"
+			#adb kill-server
+			break
+		elif [[ "$ADBWORKS" == *"ADB_VENDOR_KEYS"* ]]; then
+			adb kill-server
+			if [ $CONNECTTRYS == "0" ]; then
+				echo "ADBWORKS=$ADBWORKS"
+				echo "[!] Cannot init ADB"
+				ADBDISABLED=true
+				adb kill-server
+				break
+			fi
+			timeout -k 1 4 adb wait-for-device
+			CONNECTTRYS=$(( CONNECTTRYS - 1 ))
+		fi
+		ADBWORKS=$(adb shell 'echo true' 2>&1)
+	done
+
+	export ADBDISABLED
+}
+
 CreateFakeRamdisk() {
-	echo "[*] Creating Fake ramdisk.img"
+	echo "[*] Creating fake ramdisk.img"
 	RAMDISKDIR=$TMPDIR/fakeramdisk
 	CPIO=$BASEDIR/ramdisk.cpio
 	rm -rf $RAMDISKDIR
 	mkdir -p $RAMDISKDIR
-	echo "[*] Copy files..."
 	cp $ANDROIROOTDIR/init $RAMDISKDIR
 	#cp $ANDROIROOTDIR/fstab.cheets $RAMDISKDIR
-	echo "[*] Packing fake ramdisk.img..."
 	cd $RAMDISKDIR > /dev/null
 		`$BB find . | $BB cpio -H newc -o | $BB gzip > $BASEDIR/ramdisk.img`
 	cd - > /dev/null
@@ -168,37 +192,52 @@ CreateFakeRamdisk() {
 	export RAMDISKDIR
 }
 
-InitADB() {
-	echo "[*] Init ADB"
-	ADBWORKS=$(adb shell 'echo true' 2>/dev/null)&
-	pids=" $!"
-	wait $pids
-
-	if [[ "$ADBWORKS" == *"ADB_VENDOR_KEYS"* ]]; then
-		adb kill-server &
-		pids=" $!"
-		wait $pids
-		adb shell &
-		pids=" $!"
-		wait $pids
-	fi
-}
-
 PatchFakeRamdisk() {
-	echo "[*] Cleaning up the ADB working space"
-	adb shell rm -rf $ADBBASEDIR
-	echo "[*] Creating the ADB working space"
-	adb shell mkdir $ADBBASEDIR
-	adb push rootAVD.sh $ADBBASEDIR
-	adb push ramdisk.img $ADBBASEDIR
-	adb push Magisk.zip $ADBBASEDIR
-	adb shell sh $ADBBASEDIR/rootAVD.sh $@
-	adb pull $ADBBASEDIR/ramdiskpatched4AVD.img $BASEDIR/ramdisk.img
-	adb pull $ADBBASEDIR/Magisk.apk
-	adb pull $ADBBASEDIR/busybox
+	
+	if ( ! "$ADBDISABLED" ); then
+		echo "[*] Cleaning up the ADB working space"
+		adb shell rm -rf $ADBBASEDIR
+		echo "[*] Creating the ADB working space"
+		adb shell mkdir $ADBBASEDIR
+		adb push rootAVD.sh $ADBBASEDIR
+		adb push ramdisk.img $ADBBASEDIR
+		adb push Magisk.zip $ADBBASEDIR
+		adb shell sh $ADBBASEDIR/rootAVD.sh $@
+		adb pull $ADBBASEDIR/ramdiskpatched4AVD.img $BASEDIR/ramdisk.img
+		adb pull $ADBBASEDIR/Magisk.apk
+		adb pull $ADBBASEDIR/busybox
+		echo "[*] Trying to install Magisk.apk"
+		adb install -r -d Magisk.apk
+	elif ( "$ADBDISABLED" ); then
+		echo "[*] Cleaning up the android-sh working space"
+		rm -rf $ANDROIDATADIR$ADBBASEDIR
+		rm $ANDROIDATADIR$ADBWORKDIR/rootAVD.sh
+		rm $ANDROIDATADIR$ADBWORKDIR/ramdisk.img
+		rm $ANDROIDATADIR$ADBWORKDIR/Magisk.zip
+		echo "rm -rf $ADBBASEDIR" | android-sh
+		
+		echo "[*] Creating the android-sh working space"
+		echo "mkdir $ADBBASEDIR" | android-sh
+		
+		cp rootAVD.sh $ANDROIDATADIR$ADBWORKDIR
+		cp ramdisk.img $ANDROIDATADIR$ADBWORKDIR
+		cp Magisk.zip $ANDROIDATADIR$ADBWORKDIR
+		
+		echo "cp $ADBWORKDIR/rootAVD.sh $ADBBASEDIR" | android-sh
+		echo "cp $ADBWORKDIR/ramdisk.img $ADBBASEDIR" | android-sh
+		echo "cp $ADBWORKDIR/Magisk.zip $ADBBASEDIR" | android-sh
+		
+		echo "chown -R 2000:2000 $ADBBASEDIR" | android-sh
+		echo "sh $ADBBASEDIR/rootAVD.sh $@" | android-sh
+		
+		cp $ANDROIDATADIR$ADBBASEDIR/ramdiskpatched4AVD.img $BASEDIR/ramdisk.img
+		cp $ANDROIDATADIR$ADBBASEDIR/Magisk.apk $BASEDIR
+		cp $ANDROIDATADIR$ADBBASEDIR/busybox $BASEDIR
+		
+		echo "[*] Trying to install Magisk.apk"
+		echo "pm install -d $ADBBASEDIR/Magisk.apk" | android-sh		
+	fi
 	chmod +x $BASEDIR/busybox
-	echo "[*] Trying to install Magisk.apk"
-	adb install -r -d Magisk.apk
 }
 
 RemountDrive() {
@@ -219,56 +258,12 @@ CleanUp() {
 }
 
 CleanUpMounts() {
-	#CleanUp $FM
-	#CleanUp $TO
-	#CleanUp $TEMP
 	CleanUp $FIN
 }
 
 CreateOverlayMounts() {
-	#mkdir $FM
-	#mkdir $TO
-	#mkdir $TEMP
 	mkdir $FIN
-	#-o context=system_u:object_r:public_content_t:s0 /dev/sdb1
-	#drwxr-xr-x. 17 android-root android-root u:object_r:rootfs:s0 909 May 17 09:21 /opt/google/containers/android/rootfs/root/
-	#mount $SYSRAWIMG $FM -t squashfs -o loop
-	#mount -o remount,nosuid,nodev,noexec $FM
-	#mount -t overlay -o lowerdir=$FM,upperdir=$TO,workdir=$TEMP overlay $FIN
-	#overlay on /usr/local/crosswork/fin type overlay (rw,relatime,lowerdir=/usr/local/crosswork/FM,upperdir=/usr/local/crosswork/to,workdir=/usr/local/crosswork/temp)
 	unsquashfs -f -d $FIN $SYSRAWIMG
-}
-
-ReadContextPerm() {
-	echo "[*] Reading Contexts and Permissions"
-	FILEUID=$(sudo stat -c %u $FIN/init)
-	FILEGID=$(sudo stat -c %g $FIN/init)
-	echo "init UID=$FILEUID GID=$FILEGID"
-	FILEPERM=$(sudo stat -c %#a $FIN/init)
-	
-	INITCONTEXT=$(ls -Z $FIN/init)
-	for i in $INITCONTEXT; do
-		INITCONTEXT=$i
-		break
-	done	
-	echo "INITCONTEXT=$INITCONTEXT"
-
-	DIRUID=$(sudo stat -c %u $FIN/sbin)
-	DIRGID=$(sudo stat -c %g $FIN/sbin)
-	echo "sbin UID=$DIRUID GID=$DIRGID"	
-	SBINCONTEXT=$(ls -dZ $FIN/sbin)
-	for i in $SBINCONTEXT; do
-		SBINCONTEXT=$i
-		break
-	done	
-	echo "SBINCONTEXT=$SBINCONTEXT"
-	
-	export FILEUID
-	export FILEGID
-	export INITCONTEXT
-	export DIRUID
-	export DIRGID
-	export SBINCONTEXT
 }
 
 set_perm() {
@@ -358,101 +353,18 @@ service KILQmKFSZy /sbin/magisk --boot-complete
     oneshot
 " >>  $FIN/init.rc
 }
-
-CreateMagiskDaemonSCR() {
-
-ADBTMP=/data/local/tmp
-adb shell cp $ADBBASEDIR/busybox $ADBTMP/
-adb shell cp $ADBBASEDIR/magiskinit $ADBTMP/
-adb shell cp $ADBBASEDIR/magisk64 $ADBTMP/magisk
-
-echo "#!/usr/bin/env bash
-
-mount_sbin() {
-  mount -t tmpfs -o 'mode=0755' tmpfs /sbin
-  \$SELINUX && chcon u:object_r:rootfs:s0 /sbin
-}
-
-cd /sbin
-chmod 777 busybox
-chmod 777 magiskinit
-chmod 777 magisk
-
-if [ -z \"\$FIRST_STAGE\" ]; then
-  export FIRST_STAGE=1
-  export ASH_STANDALONE=1
-  if [ `./busybox id -u` -ne 0 ]; then
-    # Re-exec script with root
-    exec /sbin/su 0 ./busybox sh \$0
-  else
-    # Re-exec script with busybox
-    exec ./busybox sh \$0
-  fi
-fi
-
-# SELinux stuffs
-#SELINUX=false
-[ -e /sys/fs/selinux ] && SELINUX=true
-if \$SELINUX; then
-  ln -sf ./magiskinit magiskpolicy
-  ./magiskpolicy --live --magisk
-fi
-
-# Setup bin overlay
-# Android Q+ without sbin, use overlayfs
-BINDIR=/system/bin
-rm -rf /dev/magisk
-mkdir -p /dev/magisk/upper
-mkdir /dev/magisk/work
-./magisk --clone-attr /system/bin /dev/magisk/upper
-mount -t overlay overlay -o lowerdir=/system/bin,upperdir=/dev/magisk/upper,workdir=/dev/magisk/work /system/bin
-
-# Magisk stuffs
-cp -af ./magisk $BINDIR/magisk
-chmod 755 \$BINDIR/magisk
-ln -s ./magisk \$BINDIR/su
-ln -s ./magisk \$BINDIR/resetprop
-ln -s ./magisk \$BINDIR/magiskhide
-mkdir -p /data/adb/modules 2>/dev/null
-mkdir /data/adb/post-fs-data.d 2>/dev/null
-mkdir /data/adb/services.d 2>/dev/null
-\$BINDIR/magisk --daemon
-
-echo \"came so far\"
-
-" >  $BASEDIR/magiskdaemon.sh
-chmod +x magiskdaemon.sh
-adb push magiskdaemon.sh $ADBBASEDIR
-adb push magiskdaemon.sh $ADBTMP/
-}
 	
 PatchOverlayWithFakeRamdisk() {
 	echo "[*] Patching Overlay with fake ramdisk.img"
 	ANDROIDROOT=$(stat -c %u $FIN/system)
 	mv $BASEDIR/ramdisk.img $BASEDIR/ramdisk.cpio.gz
 	$BB gzip -fd $BASEDIR/ramdisk.cpio.gz
-	mkdir -p $RAMDISKDIR
 	echo "[-] Extracting ramdisk.cpio"
-	#cd $FIN > /dev/null
-	cd $RAMDISKDIR > /dev/null
-		#rm ./init
-		#cat $BASEDIR/ramdisk.cpio | $BB cpio -i > /dev/null 2>&1
-		#cp ./overlay.d/sbin/magisk* ./sbin
-		#rm $BASEDIR/ramdisk.cpio > /dev/null 2>&1
-	cd - > /dev/null
-	#cp $RAMDISKDIR/init $RAMDISKDIR/overlay.d/sbin/magiskinit
-	#cp $BASEDIR/busybox $RAMDISKDIR/overlay.d/sbin/
-	
-	
-	echo "[*] Copy Ramdisk Files"
-	#cp -r $RAMDISKDIR/overlay.d/sbin/* $FIN/sbin/
-	#cp -r $RAMDISKDIR/overlay.d/* $FIN/
-	#cp -r $RAMDISKDIR/overlay.d $FIN/
-	#cp -r $RAMDISKDIR/* $FIN
-	
+
 	cd $FIN > /dev/null
 		#rm ./init
 		cat $BASEDIR/ramdisk.cpio | $BB cpio -i > /dev/null 2>&1
+		rm $BASEDIR/ramdisk.cpio
 		cp ./init ./overlay.d/sbin/magiskinit
 		cp $BASEDIR/busybox ./overlay.d/sbin/
 		cp -r ./overlay.d/sbin $FIN
@@ -488,45 +400,30 @@ PatchOverlayWithFakeRamdisk() {
 	
 	set_perm $FIN/init $ANDROIDROOT $ANDROIDROOT 0755 u:object_r:init_exec:s0
 	set_perm_recursive $FIN/.backup $ANDROIDROOT $ANDROIDROOT 0755 0777
-	
-	#if [ ! -e "$ANDROIDATADIR/data/adb/magisk" ]; then
-		#mkdir -p $ANDROIDATADIR/data/adb/magisk
-		#mkdir -p $ANDROIDATADIR/data/adb/modules
-		#mkdir -p $ANDROIDATADIR/data/adb/post-fs-data.d
-		#mkdir -p $ANDROIDATADIR/data/adb/services.d
-	
-		#cd $ANDROIDATADIR/data/adb > /dev/null
-			#chcon u:object_r:system_file:s0 ./magisk
-			#chcon u:object_r:system_file:s0 ./modules
-			#chcon u:object_r:adb_data_file:s0 ./post-fs-data.d
-			#chcon u:object_r:adb_data_file:s0 ./services.d
-
-			#SetOwner $ANDROIDATADIR/data/adb ./magisk
-			#SetOwner $ANDROIDATADIR/data/adb ./modules
-			#SetOwner $ANDROIDATADIR/data/adb ./post-fs-data.d
-			#SetOwner $ANDROIDATADIR/data/adb ./services.d
-
-			#chmod 0755 ./magisk
-			#chmod 0755 ./modules
-			#chmod 0755 ./post-fs-data.d
-			#chmod 0755 ./services.d				
-		#cd - > /dev/null
-	#fi
 	patch_init
-	#cat $FIN/init.rc
 }
 
 PatchSELinux() {
-	#adb push $POLICY $ADBBASEDIR
-	echo "[*] Inject SELinux with Magisk built-in rules"
-	adb shell cp $ADBBASEDIR/magiskinit $ADBBASEDIR/magiskpolicy
-	adb shell $ADBBASEDIR/magiskpolicy --save $ADBBASEDIR/policy.30.magisk --magisk
+	
 	create_backup $POLICY
-	adb pull $ADBBASEDIR/policy.30.magisk $POLICY	
+	if ( ! "$ADBDISABLED" ); then
+		echo "[*] Inject SELinux with Magisk built-in rules via ADB"
+		adb shell cp $ADBBASEDIR/magiskinit $ADBBASEDIR/magiskpolicy
+		adb shell $ADBBASEDIR/magiskpolicy --save $ADBBASEDIR/policy.30.magisk --magisk
+		adb pull $ADBBASEDIR/policy.30.magisk $POLICY	
+		adb shell cp /sepolicy $ADBBASEDIR
+		adb shell $ADBBASEDIR/magiskpolicy --load $ADBBASEDIR/sepolicy --save $ADBBASEDIR/sepolicy.magisk --magisk
+		adb pull $ADBBASEDIR/sepolicy.magisk $FIN
+	elif ( "$ADBDISABLED" ); then
+		echo "[*] Inject SELinux with Magisk built-in rules via android-sh"
+		echo "cp $ADBBASEDIR/magiskinit $ADBBASEDIR/magiskpolicy" | android-sh
+		echo "$ADBBASEDIR/magiskpolicy --save $ADBBASEDIR/policy.30.magisk --magisk" | android-sh
+		cp $ANDROIDATADIR$ADBBASEDIR/policy.30.magisk $POLICY
+		echo "cp /sepolicy $ADBBASEDIR" | android-sh
+		echo "$ADBBASEDIR/magiskpolicy --load $ADBBASEDIR/sepolicy --save $ADBBASEDIR/sepolicy.magisk --magisk" | android-sh
+		cp $ANDROIDATADIR$ADBBASEDIR/sepolicy.magisk $FIN		
+	fi
 	SetPerm $POLICYCONREF $POLICY
-	adb shell cp /sepolicy $ADBBASEDIR/
-	adb shell $ADBBASEDIR/magiskpolicy --load $ADBBASEDIR/sepolicy --save $ADBBASEDIR/sepolicy.magisk --magisk
-	adb pull $ADBBASEDIR/sepolicy.magisk $FIN
 	SetPerm $FIN/sepolicy $FIN/sepolicy.magisk
 	mv $FIN/sepolicy.magisk $FIN/sepolicy
 }
@@ -559,7 +456,7 @@ restore_backup() {
 	local BACKUPFILE=""
 	local FILE=""
 	FILE="$1"
-	CONTEXTREF="$1"
+	CONTEXTREF="$2"
 	BACKUPFILE="$FILE.backup"
 
 	if [ -e "$BACKUPFILE" ]; then
@@ -583,11 +480,11 @@ ProcessArguments $@
 #####
 $RemountDrive && RemountDrive && exit 0
 $CleanUpMounts && CleanUpMounts && exit 0
-$restore && RemountDrive && restore_backup $SYSRAWIMG $VENRAWIMG && exit 0
+$restore && RemountDrive && restore_backup $SYSRAWIMG $VENRAWIMG && restore_backup $POLICY $POLICYCONREF && exit 0
 #####
 
 DownloadAssets
-
+rm $BASEDIR/ramdisk.img
 if [ ! -e "$BASEDIR/ramdisk.img" ]; then
 	InitADB
 	CreateFakeRamdisk
@@ -601,7 +498,7 @@ CreateOverlayMounts
 read -p "Make your changes and Enter when finshed to continue" </dev/tty
 PatchOverlayWithFakeRamdisk
 PatchSELinux
-#CreateMagiskDaemonSCR
+
 echo "DEBUG=$DEBUG"
 if ( ! "$DEBUG" ); then
 	read -p "Make your changes and Enter when finshed to continue" </dev/tty
