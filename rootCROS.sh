@@ -50,7 +50,12 @@ ProcessArguments() {
 	if [ -z $restore ]; then
 		restore=false
 	fi
-	#restore=true
+	restore=true
+	if [ -z $DEBUG ]; then
+		DEBUG=false
+	fi
+	#DEBUG=true
+	
 	# Overlay Directorys
 	FM=$BASEDIR/FM
 	TO=$BASEDIR/to
@@ -108,6 +113,7 @@ ProcessArguments() {
 	export RemountDrive
 	export CleanUpMounts
 	export restore
+	export DEBUG
 }
 
 DownloadAssets() {
@@ -189,8 +195,10 @@ PatchFakeRamdisk() {
 	adb shell sh $ADBBASEDIR/rootAVD.sh $@
 	adb pull $ADBBASEDIR/ramdiskpatched4AVD.img $BASEDIR/ramdisk.img
 	adb pull $ADBBASEDIR/Magisk.apk
+	adb pull $ADBBASEDIR/busybox
+	chmod +x $BASEDIR/busybox
 	echo "[*] Trying to install Magisk.apk"
-	adb install -r -d Magisk.apk
+	#adb install -r -d Magisk.apk
 }
 
 RemountDrive() {
@@ -263,6 +271,23 @@ ReadContextPerm() {
 	export SBINCONTEXT
 }
 
+set_perm() {
+  $BB chown $2:$3 $1 || return 1
+  $BB chmod $4 $1 || return 1
+  CON=$5
+  [ -z $CON ] && CON=u:object_r:system_file:s0
+  $BB chcon $CON $1 || return 1
+}
+
+set_perm_recursive() {
+  $BB find $1 -type d 2>/dev/null | while read dir; do
+    set_perm $dir $2 $3 $4 $6
+  done
+  $BB find $1 -type f -o -type l 2>/dev/null | while read file; do
+    set_perm $file $2 $3 $5 $6
+  done
+}
+
 SetPerm() {
 	# SET PERM from $1 to $2
 	echo "[!] Set Permissions and Context from"
@@ -301,6 +326,9 @@ on property:init.svc.zygote=running
     chown root root /sbin/magisk32
     chown root root /sbin/magisk64
     chown root root /sbin/magiskinit
+    chown root root /sbin/busybox
+    chown root root /overlay.d
+    chown root root /.backup
     write /sys/fs/selinux/enforce 0
     start magiskdaemon
     start q2RZ4jzDFsBXQT7    
@@ -331,8 +359,76 @@ service KILQmKFSZy /sbin/magisk --boot-complete
 " >>  $FIN/init.rc
 }
 
+CreateMagiskDaemonSCR() {
+
+ADBTMP=/data/local/tmp
+adb shell cp $ADBBASEDIR/busybox $ADBTMP/
+adb shell cp $ADBBASEDIR/magiskinit $ADBTMP/
+adb shell cp $ADBBASEDIR/magisk64 $ADBTMP/magisk
+
+echo "#!/usr/bin/env bash
+
+mount_sbin() {
+  mount -t tmpfs -o 'mode=0755' tmpfs /sbin
+  \$SELINUX && chcon u:object_r:rootfs:s0 /sbin
+}
+
+cd /sbin
+chmod 777 busybox
+chmod 777 magiskinit
+chmod 777 magisk
+
+if [ -z \"\$FIRST_STAGE\" ]; then
+  export FIRST_STAGE=1
+  export ASH_STANDALONE=1
+  if [ `./busybox id -u` -ne 0 ]; then
+    # Re-exec script with root
+    exec /sbin/su 0 ./busybox sh \$0
+  else
+    # Re-exec script with busybox
+    exec ./busybox sh \$0
+  fi
+fi
+
+# SELinux stuffs
+#SELINUX=false
+[ -e /sys/fs/selinux ] && SELINUX=true
+if \$SELINUX; then
+  ln -sf ./magiskinit magiskpolicy
+  ./magiskpolicy --live --magisk
+fi
+
+# Setup bin overlay
+# Android Q+ without sbin, use overlayfs
+BINDIR=/system/bin
+rm -rf /dev/magisk
+mkdir -p /dev/magisk/upper
+mkdir /dev/magisk/work
+./magisk --clone-attr /system/bin /dev/magisk/upper
+mount -t overlay overlay -o lowerdir=/system/bin,upperdir=/dev/magisk/upper,workdir=/dev/magisk/work /system/bin
+
+# Magisk stuffs
+cp -af ./magisk $BINDIR/magisk
+chmod 755 \$BINDIR/magisk
+ln -s ./magisk \$BINDIR/su
+ln -s ./magisk \$BINDIR/resetprop
+ln -s ./magisk \$BINDIR/magiskhide
+mkdir -p /data/adb/modules 2>/dev/null
+mkdir /data/adb/post-fs-data.d 2>/dev/null
+mkdir /data/adb/services.d 2>/dev/null
+\$BINDIR/magisk --daemon
+
+echo \"came so far\"
+
+" >  $BASEDIR/magiskdaemon.sh
+chmod +x magiskdaemon.sh
+adb push magiskdaemon.sh $ADBBASEDIR
+adb push magiskdaemon.sh $ADBTMP/
+}
+	
 PatchOverlayWithFakeRamdisk() {
 	echo "[*] Patching Overlay with fake ramdisk.img"
+	ANDROIDROOT=$(stat -c %u $FIN/system)
 	mv $BASEDIR/ramdisk.img $BASEDIR/ramdisk.cpio.gz
 	$BB gzip -fd $BASEDIR/ramdisk.cpio.gz
 	mkdir -p $RAMDISKDIR
@@ -340,72 +436,82 @@ PatchOverlayWithFakeRamdisk() {
 	#cd $FIN > /dev/null
 	cd $RAMDISKDIR > /dev/null
 		#rm ./init
-		cat $BASEDIR/ramdisk.cpio | $BB cpio -i > /dev/null 2>&1
+		#cat $BASEDIR/ramdisk.cpio | $BB cpio -i > /dev/null 2>&1
 		#cp ./overlay.d/sbin/magisk* ./sbin
+		#rm $BASEDIR/ramdisk.cpio > /dev/null 2>&1
+	cd - > /dev/null
+	#cp $RAMDISKDIR/init $RAMDISKDIR/overlay.d/sbin/magiskinit
+	#cp $BASEDIR/busybox $RAMDISKDIR/overlay.d/sbin/
+	
+	
+	echo "[*] Copy Ramdisk Files"
+	#cp -r $RAMDISKDIR/overlay.d/sbin/* $FIN/sbin/
+	#cp -r $RAMDISKDIR/overlay.d/* $FIN/
+	#cp -r $RAMDISKDIR/overlay.d $FIN/
+	#cp -r $RAMDISKDIR/* $FIN
+	
+	cd $FIN > /dev/null
+		#rm ./init
+		cat $BASEDIR/ramdisk.cpio | $BB cpio -i > /dev/null 2>&1
+		cp ./init ./overlay.d/sbin/magiskinit
+		cp $BASEDIR/busybox ./overlay.d/sbin/
+		cp -r ./overlay.d/sbin $FIN
 	cd - > /dev/null
 	
-	mv $RAMDISKDIR/init $RAMDISKDIR/overlay.d/sbin/magiskinit
-	
-	echo "[*] Copy Ramdisk Files to /sbin"
-	cp -r $RAMDISKDIR/overlay.d/sbin/* $FIN/sbin/
-	#cp -r $RAMDISKDIR/overlay.d/* $FIN/
-	
 	cd $FIN/sbin > /dev/null
-		$BB unxz magisk64.xz
-		$BB unxz magisk32.xz
-		chcon u:object_r:magisk_exec:s0 ./magisk64
-		#chcon u:object_r:system_file:s0 ./magisk64
-		chcon u:object_r:magisk_exec:s0 ./magisk32
-		#chcon u:object_r:system_file:s0 ./magisk32
-		
-		#SetOwner $FIN/init ./magisk64
-		#SetOwner $FIN/init ./magisk32	
-		chown 0:0 ./magisk64
-		chown 0:0 ./magisk32
-		chmod 0777 ./magisk64
-		chmod 0777 ./magisk32
-		
+		$BB unxz -f magisk64.xz
+		$BB unxz -f magisk32.xz
 		#ln -s ./magisk32 ./magisk
 		ln -sf ./magisk64 ./magisk
 		ln -sf ./magisk ./su
 		ln -sf ./magisk ./resetprop
 		ln -sf ./magisk ./magiskhide
-		
-		SetOwner $FIN/init ./magisk
-		SetOwner $FIN/init ./su
-		SetOwner $FIN/init ./resetprop
-		SetOwner $FIN/init ./magiskhide
-		
-		chcon u:object_r:system_file:s0 ./magiskinit
-		#SetOwner $FIN/init ./magiskinit
-		chown 0:0 ./magiskinit
-		chmod 0777 ./magiskinit
 		ln -sf ./magiskinit ./magiskpolicy
+		
+		#$BB magisk64 magisk
+		set_perm_recursive $FIN/sbin $ANDROIDROOT $ANDROIDROOT 0755 0777
+		set_perm_recursive $FIN/overlay.d $ANDROIDROOT $ANDROIDROOT 0755 0777
+		
+		set_perm ./magisk64 $ANDROIDROOT $ANDROIDROOT 0755 u:object_r:magisk_exec:s0
+		set_perm ./magisk32 $ANDROIDROOT $ANDROIDROOT 0755 u:object_r:magisk_exec:s0		
+		
+		set_perm ./magisk $ANDROIDROOT $ANDROIDROOT 0755 u:object_r:system_file:s0
+		set_perm ./su $ANDROIDROOT $ANDROIDROOT 0755 u:object_r:system_file:s0
+		set_perm ./resetprop $ANDROIDROOT $ANDROIDROOT 0755 u:object_r:system_file:s0
+		set_perm ./magiskhide $ANDROIDROOT $ANDROIDROOT 0755 u:object_r:system_file:s0
+		set_perm ./magiskinit $ANDROIDROOT $ANDROIDROOT 0755 u:object_r:system_file:s0
+		
+		set_perm ./busybox $ANDROIDROOT $ANDROIDROOT 0755 u:object_r:magisk_file:s0
+		#set_perm ./magiskdaemon.sh $ANDROIDROOT $ANDROIDROOT 0755 u:object_r:magisk_exec:s0
+		
 	cd - > /dev/null
 	
-	if [ ! -e "$ANDROIDATADIR/data/adb/magisk" ]; then
-		mkdir -p $ANDROIDATADIR/data/adb/magisk
-		mkdir -p $ANDROIDATADIR/data/adb/modules
-		mkdir -p $ANDROIDATADIR/data/adb/post-fs-data.d
-		mkdir -p $ANDROIDATADIR/data/adb/services.d
+	set_perm $FIN/init $ANDROIDROOT $ANDROIDROOT 0755 u:object_r:init_exec:s0
+	set_perm_recursive $FIN/.backup $ANDROIDROOT $ANDROIDROOT 0755 0777
 	
-		cd $ANDROIDATADIR/data/adb > /dev/null
-			chcon u:object_r:system_file:s0 ./magisk
-			chcon u:object_r:system_file:s0 ./modules
-			chcon u:object_r:adb_data_file:s0 ./post-fs-data.d
-			chcon u:object_r:adb_data_file:s0 ./services.d
+	#if [ ! -e "$ANDROIDATADIR/data/adb/magisk" ]; then
+		#mkdir -p $ANDROIDATADIR/data/adb/magisk
+		#mkdir -p $ANDROIDATADIR/data/adb/modules
+		#mkdir -p $ANDROIDATADIR/data/adb/post-fs-data.d
+		#mkdir -p $ANDROIDATADIR/data/adb/services.d
+	
+		#cd $ANDROIDATADIR/data/adb > /dev/null
+			#chcon u:object_r:system_file:s0 ./magisk
+			#chcon u:object_r:system_file:s0 ./modules
+			#chcon u:object_r:adb_data_file:s0 ./post-fs-data.d
+			#chcon u:object_r:adb_data_file:s0 ./services.d
 
-			SetOwner $ANDROIDATADIR/data/adb ./magisk
-			SetOwner $ANDROIDATADIR/data/adb ./modules
-			SetOwner $ANDROIDATADIR/data/adb ./post-fs-data.d
-			SetOwner $ANDROIDATADIR/data/adb ./services.d
+			#SetOwner $ANDROIDATADIR/data/adb ./magisk
+			#SetOwner $ANDROIDATADIR/data/adb ./modules
+			#SetOwner $ANDROIDATADIR/data/adb ./post-fs-data.d
+			#SetOwner $ANDROIDATADIR/data/adb ./services.d
 
-			chmod 0755 ./magisk
-			chmod 0755 ./modules
-			chmod 0755 ./post-fs-data.d
-			chmod 0755 ./services.d				
-		cd - > /dev/null
-	fi
+			#chmod 0755 ./magisk
+			#chmod 0755 ./modules
+			#chmod 0755 ./post-fs-data.d
+			#chmod 0755 ./services.d				
+		#cd - > /dev/null
+	#fi
 	patch_init
 	#cat $FIN/init.rc
 }
@@ -413,11 +519,16 @@ PatchOverlayWithFakeRamdisk() {
 PatchSELinux() {
 	#adb push $POLICY $ADBBASEDIR
 	echo "[*] Inject SELinux with Magisk built-in rules"
-	adb shell mv $ADBBASEDIR/magiskinit $ADBBASEDIR/magiskpolicy
+	adb shell cp $ADBBASEDIR/magiskinit $ADBBASEDIR/magiskpolicy
 	adb shell $ADBBASEDIR/magiskpolicy --save $ADBBASEDIR/policy.30.magisk --magisk
 	create_backup $POLICY
 	adb pull $ADBBASEDIR/policy.30.magisk $POLICY	
 	SetPerm $POLICYCONREF $POLICY
+	adb shell cp /sepolicy $ADBBASEDIR/
+	adb shell $ADBBASEDIR/magiskpolicy --load $ADBBASEDIR/sepolicy --save $ADBBASEDIR/sepolicy.magisk --magisk
+	adb pull $ADBBASEDIR/sepolicy.magisk $FIN
+	SetPerm $FIN/sepolicy $FIN/sepolicy.magisk
+	mv $FIN/sepolicy.magisk $FIN/sepolicy
 }
 
 makeSQUASHFS() {
@@ -487,56 +598,20 @@ CleanUpMounts
 RemountDrive
 
 CreateOverlayMounts
-#read -p "Make your changes and Enter when finshed to continue" </dev/tty
+read -p "Make your changes and Enter when finshed to continue" </dev/tty
 PatchOverlayWithFakeRamdisk
 PatchSELinux
-read -p "Make your changes and Enter when finshed to continue" </dev/tty
-create_backup $SYSRAWIMG
-makeSQUASHFS	
-CleanUpMounts
-rm -r $BASEDIR/ramdisk.cpio > /dev/null 2>&1 &
-rm -r $TMPDIR > /dev/null 2>&1 &
+#CreateMagiskDaemonSCR
+echo "DEBUG=$DEBUG"
+if ( ! "$DEBUG" ); then
+	read -p "Make your changes and Enter when finshed to continue" </dev/tty
+	create_backup $SYSRAWIMG
+	makeSQUASHFS	
+	CleanUpMounts
+	rm -r $TMPDIR > /dev/null 2>&1 &	
+fi
 exit 0
 
 #ReadContextPerm
 
 
-exit 0
-
-#cp --preserve=context
-sudo mv /media/$USER/fin/init /media/$USER/fin/.backup/init
-sudo chmod -R 000 /media/$USER/fin/.backup
-sudo cp /home/$USER/rootCHROS/ramdisk.img/init /media/$USER/fin/
-sudo stat sudo /media/$USER/fin/init
-sudo chown -R $FILEUID.$FILEGID /media/$USER/fin/init
-sudo apt install policycoreutils-python-utils
-
-sudo cp --preserve=context /home/$USER/rootCHROS/ramdisk.img/init /media/$USER/fin/
-sudo semanage fcontext -a -e /media/$USER/fin/init.rc /media/$USER/fin/init
-
-
-sudo mv /media/$USER/ROOT-A1/opt/google/containers/android/system.raw.img /media/$USER/ROOT-A1/opt/google/containers/android/system.raw.img.bak
-sudo mv /media/$USER/ROOT-A1/opt/google/containers/android/system.raw.img.magisk /media/$USER/ROOT-A1/opt/google/containers/android/system.raw.img
-
-	# Magisk stuffs
-	#xsymlink("./magisk64", "magisk");
-	#cp -af ./magisk $BINDIR/magisk
-	#chmod 755 $BINDIR/magisk
-	#ln -s ./magisk $BINDIR/su
-	#ln -s ./magisk $BINDIR/resetprop
-	#ln -s ./magisk $BINDIR/magiskhide
-	#ln -sf ./magiskinit magiskpolicy
-	#./magiskpolicy --live --magisk
-	#mkdir -p /data/adb/modules 2>/dev/null
-	#mkdir /data/adb/post-fs-data.d 2>/dev/null
-	#mkdir /data/adb/services.d 2>/dev/null
-	#$BINDIR/magisk --daemon
-
-	#SetPerm $ANDROIROOTDIR/init $RAMDISKDIR/init
-	#SetPerm $ANDROIROOTDIR/sbin $RAMDISKDIR/overlay.d
-	#SetPerm $ANDROIROOTDIR/sbin $RAMDISKDIR/overlay.d/sbin
-	#SetPerm $ANDROIROOTDIR/sbin $RAMDISKDIR/overlay.d/sbin/magisk32.xz
-	#SetPerm $ANDROIROOTDIR/sbin $RAMDISKDIR/overlay.d/sbin/magisk64.xz	
-	#cp -r --preserve=context $RAMDISKDIR/* $FIN/
-
-exit
