@@ -151,7 +151,7 @@ InitADB() {
 	ADBDISABLED=false
 	ADBWORKS=false
 	CONNECTTRYS=2
-	adb start-server &
+	timeout -k 1 4 adb start-server
 	
 	while [ "$ADBWORKS" != "true" ];do
 		if [[ "$ADBWORKS" == *"devices/emulators"* ]]; then
