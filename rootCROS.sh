@@ -22,6 +22,7 @@ GainRoot() {
 
 ChangeLocation() {
 	local WORKDIR=/usr/local
+	WORKDIR=$PORTAGE_CONFIGROOT
 	BASEDIR=$WORKDIR/crosswork
 	local CURDIR="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 
@@ -150,7 +151,7 @@ InitADB() {
 	ADBDISABLED=false
 	ADBWORKS=false
 	CONNECTTRYS=2
-	adb start-server
+	adb start-server &
 	
 	while [ "$ADBWORKS" != "true" ];do
 		if [[ "$ADBWORKS" == *"devices/emulators"* ]]; then
