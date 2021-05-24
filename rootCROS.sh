@@ -56,6 +56,10 @@ ProcessArguments() {
 		DEBUG=false
 	fi
 	#DEBUG=true
+	if [ -z $InstallADBKey ]; then
+		InstallADBKey=false
+	fi
+	#InstallADBKey=true	
 	
 	# Overlay Directorys
 	FIN=$BASEDIR/fin
@@ -78,6 +82,9 @@ ProcessArguments() {
 	ANDROIDATADIR=/opt/google/containers/android/rootfs/android-data
 	ADBWORKDIR=/data/data/com.android.shell
 	ADBBASEDIR=$ADBWORKDIR/Magisk
+	HOCHUSAN=/home/chronos/user/.android
+	ADBKEYPUB=adbkey.pub
+	ADBKEYS=/data/misc/adb/adb_keys
 	
 	if [[ "$@" == *"CleanUpMounts"* ]]; then
 		CleanUpMounts=true
@@ -104,11 +111,13 @@ ProcessArguments() {
 
 	export ADBWORKDIR
 	export ADBBASEDIR
+	export ADBKEYPUB
 	
 	export RemountDrive
 	export CleanUpMounts
 	export restore
 	export DEBUG
+	export InstallADBKey
 }
 
 DownloadAssets() {
@@ -144,6 +153,20 @@ DownloadAssets() {
 	export ROOTAVD
 	export MZ
 	export BB	
+}
+
+InstallADBKey() {
+	if [ -e "$HOCHUSAN/$ADBKEYPUB" ]; then
+		#if [ ! -e "$ANDROIDATADIR$ADBKEYS" ]; then
+			echo "[*] Installing ADB Key Public via android-sh"
+			cp $HOCHUSAN/$ADBKEYPUB $ANDROIDATADIR$ADBWORKDIR
+			echo "cp $ADBWORKDIR/$ADBKEYPUB $ADBKEYS" | android-sh
+			echo "chown system:shell $ADBKEYS" | android-sh
+			echo "chmod 0640 $ADBKEYS" | android-sh
+			echo "chcon u:object_r:adb_keys_file:s0 $ADBKEYS" | android-sh
+		#fi	
+	fi
+	exit 0
 }
 
 InitADB() {
@@ -483,8 +506,8 @@ $RemountDrive && RemountDrive && exit 0
 $CleanUpMounts && CleanUpMounts && exit 0
 $restore && RemountDrive && restore_backup $SYSRAWIMG $VENRAWIMG && restore_backup $POLICY $POLICYCONREF && exit 0
 #####
-
 DownloadAssets
+$InstallADBKey && InstallADBKey
 rm $BASEDIR/ramdisk.img
 if [ ! -e "$BASEDIR/ramdisk.img" ]; then
 	InitADB
