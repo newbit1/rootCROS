@@ -389,9 +389,9 @@ PatchOverlayWithFakeRamdisk() {
 	cd $FIN > /dev/null
 		$REPLACEINIT && rm ./init
 		cat $BASEDIR/ramdisk.cpio | $BB cpio -i > /dev/null 2>&1
-		cat $BASEDIR/ramdisk.cpio | $BB cpio -i init -d ./overlay.d/sbin > /dev/null 2>&1
+		cat $BASEDIR/ramdisk.cpio | $BB cpio -i /init -d ./overlay.d/sbin > /dev/null 2>&1
 		mv ./overlay.d/sbin/init ./overlay.d/sbin/magiskinit
-		rm $BASEDIR/ramdisk.cpio
+		#rm $BASEDIR/ramdisk.cpio
 		cp $BASEDIR/busybox ./overlay.d/sbin/
 		cp -r ./overlay.d/sbin $FIN
 		set_perm .init $ANDROIDROOT $ANDROIDROOT 0755 u:object_r:init_exec:s0
