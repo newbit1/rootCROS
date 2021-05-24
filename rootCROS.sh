@@ -22,7 +22,7 @@ GainRoot() {
 
 ChangeLocation() {
 	local WORKDIR=/usr/local
-	WORKDIR=$PORTAGE_CONFIGROOT
+	#WORKDIR=$PORTAGE_CONFIGROOT
 	BASEDIR=$WORKDIR/crosswork
 	local CURDIR="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 
