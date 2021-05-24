@@ -394,8 +394,8 @@ PatchOverlayWithFakeRamdisk() {
 		#rm $BASEDIR/ramdisk.cpio
 		cp $BASEDIR/busybox ./overlay.d/sbin/
 		cp -r ./overlay.d/sbin $FIN
-		set_perm .init $ANDROIDROOT $ANDROIDROOT 0755 u:object_r:init_exec:s0
-		set_perm_recursive .backup $ANDROIDROOT $ANDROIDROOT 0755 0777
+		set_perm ./init $ANDROIDROOT $ANDROIDROOT 0755 u:object_r:init_exec:s0
+		set_perm_recursive ./.backup $ANDROIDROOT $ANDROIDROOT 0755 0777
 	cd - > /dev/null
 	
 	cd $FIN/sbin > /dev/null
