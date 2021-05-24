@@ -387,16 +387,18 @@ PatchOverlayWithFakeRamdisk() {
 	REPLACEINIT=false
 	REPLACEINIT=true
 	cd $FIN > /dev/null
-		$REPLACEINIT && rm ./init
-		cat $BASEDIR/ramdisk.cpio | $BB cpio -i > /dev/null 2>&1
-		cat $BASEDIR/ramdisk.cpio | $BB cpio -i /init -d ./overlay.d/sbin > /dev/null 2>&1
-		mv ./overlay.d/sbin/init ./overlay.d/sbin/magiskinit
+		$REPLACEINIT && rm ./init		
+		$BB cpio -F $BASEDIR/ramdisk.cpio -i > /dev/null 2>&1
+		cd ./overlay.d/sbin > /dev/null
+			$BB cpio -F $BASEDIR/ramdisk.cpio -i init > /dev/null 2>&1
+			mv init magiskinit
+		cd - > /dev/null		
 		#rm $BASEDIR/ramdisk.cpio
 		cp $BASEDIR/busybox ./overlay.d/sbin/
 		cp -r ./overlay.d/sbin $FIN
 		set_perm ./init $ANDROIDROOT $ANDROIDROOT 0755 u:object_r:init_exec:s0
 		set_perm_recursive ./.backup $ANDROIDROOT $ANDROIDROOT 0755 0777
-	cd - > /dev/null
+	cd $BASEDIR > /dev/null
 	
 	cd $FIN/sbin > /dev/null
 		$BB unxz -f magisk64.xz
