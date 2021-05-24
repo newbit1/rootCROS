@@ -384,46 +384,49 @@ PatchOverlayWithFakeRamdisk() {
 	mv $BASEDIR/ramdisk.img $BASEDIR/ramdisk.cpio.gz
 	$BB gzip -fd $BASEDIR/ramdisk.cpio.gz
 	echo "[-] Extracting ramdisk.cpio"
-
+	REPLACEINIT=false
+	REPLACEINIT=true
 	cd $FIN > /dev/null
-		#rm ./init
+		$REPLACEINIT && rm ./init
 		cat $BASEDIR/ramdisk.cpio | $BB cpio -i > /dev/null 2>&1
+		cat $BASEDIR/ramdisk.cpio | $BB cpio -i init -d ./overlay.d/sbin > /dev/null 2>&1
+		mv ./overlay.d/sbin/init ./overlay.d/sbin/magiskinit
 		rm $BASEDIR/ramdisk.cpio
-		cp ./init ./overlay.d/sbin/magiskinit
 		cp $BASEDIR/busybox ./overlay.d/sbin/
 		cp -r ./overlay.d/sbin $FIN
+		set_perm .init $ANDROIDROOT $ANDROIDROOT 0755 u:object_r:init_exec:s0
+		set_perm_recursive .backup $ANDROIDROOT $ANDROIDROOT 0755 0777
 	cd - > /dev/null
 	
 	cd $FIN/sbin > /dev/null
 		$BB unxz -f magisk64.xz
 		$BB unxz -f magisk32.xz
-		#ln -s ./magisk32 ./magisk
-		ln -sf ./magisk64 ./magisk
-		ln -sf ./magisk ./su
-		ln -sf ./magisk ./resetprop
-		ln -sf ./magisk ./magiskhide
-		ln -sf ./magiskinit ./magiskpolicy
-		
 		#$BB magisk64 magisk
 		set_perm_recursive $FIN/sbin $ANDROIDROOT $ANDROIDROOT 0755 0777
 		set_perm_recursive $FIN/overlay.d $ANDROIDROOT $ANDROIDROOT 0755 0777
-		
 		set_perm ./magisk64 $ANDROIDROOT $ANDROIDROOT 0755 u:object_r:magisk_exec:s0
-		set_perm ./magisk32 $ANDROIDROOT $ANDROIDROOT 0755 u:object_r:magisk_exec:s0		
+		set_perm ./magisk32 $ANDROIDROOT $ANDROIDROOT 0755 u:object_r:magisk_exec:s0
 		
+		#ln -s ./magisk32 ./magisk		
+		ln -sf ./magisk64 ./magisk
 		set_perm ./magisk $ANDROIDROOT $ANDROIDROOT 0755 u:object_r:system_file:s0
+		
+		ln -sf ./magisk ./su
 		set_perm ./su $ANDROIDROOT $ANDROIDROOT 0755 u:object_r:system_file:s0
+		
+		ln -sf ./magisk ./resetprop
 		set_perm ./resetprop $ANDROIDROOT $ANDROIDROOT 0755 u:object_r:system_file:s0
+		
+		ln -sf ./magisk ./magiskhide
 		set_perm ./magiskhide $ANDROIDROOT $ANDROIDROOT 0755 u:object_r:system_file:s0
+		
 		set_perm ./magiskinit $ANDROIDROOT $ANDROIDROOT 0755 u:object_r:system_file:s0
+		ln -sf ./magiskinit ./magiskpolicy
+		set_perm ./magiskpolicy $ANDROIDROOT $ANDROIDROOT 0755 u:object_r:system_file:s0
 		
 		set_perm ./busybox $ANDROIDROOT $ANDROIDROOT 0755 u:object_r:magisk_file:s0
-		#set_perm ./magiskdaemon.sh $ANDROIDROOT $ANDROIDROOT 0755 u:object_r:magisk_exec:s0
-		
+		#set_perm ./magiskdaemon.sh $ANDROIDROOT $ANDROIDROOT 0755 u:object_r:magisk_exec:s0		
 	cd - > /dev/null
-	
-	set_perm $FIN/init $ANDROIDROOT $ANDROIDROOT 0755 u:object_r:init_exec:s0
-	set_perm_recursive $FIN/.backup $ANDROIDROOT $ANDROIDROOT 0755 0777
 	patch_init
 }
 
