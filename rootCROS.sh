@@ -48,18 +48,18 @@ ProcessArguments() {
 	RemountDrive=false
 	CleanUpMounts=false
 	
-	if [ -z $restore ]; then
-		restore=false
-	fi
+	[ ! -z $restore ] && restore=true
+	[ ! -z $DEBUG ] && DEBUG=true
+	[ ! -z $InstallADBKey ] && InstallADBKey=true
+
 	#restore=true
-	if [ -z $DEBUG ]; then
-		DEBUG=false
-	fi
 	#DEBUG=true
-	if [ -z $InstallADBKey ]; then
-		InstallADBKey=false
-	fi
-	#InstallADBKey=true	
+	#InstallADBKey=true
+	
+	echo "restore=$restore"
+	echo "DEBUG=$restore"
+	echo "InstallADBKey=$restore"
+	exit 0
 	
 	# Overlay Directorys
 	FIN=$BASEDIR/fin
@@ -385,7 +385,7 @@ PatchOverlayWithFakeRamdisk() {
 	$BB gzip -fd $BASEDIR/ramdisk.cpio.gz
 	echo "[-] Extracting ramdisk.cpio"
 	REPLACEINIT=false
-	REPLACEINIT=true
+	#REPLACEINIT=true
 	cd $FIN > /dev/null
 		$REPLACEINIT && rm ./init		
 		$BB cpio -F $BASEDIR/ramdisk.cpio -i > /dev/null 2>&1
