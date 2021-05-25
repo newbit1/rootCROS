@@ -57,8 +57,8 @@ ProcessArguments() {
 	#InstallADBKey=true
 	
 	echo "restore=$restore"
-	echo "DEBUG=$restore"
-	echo "InstallADBKey=$restore"
+	echo "DEBUG=$DEBUG"
+	echo "InstallADBKey=$InstallADBKey"
 	exit 0
 	
 	# Overlay Directorys
