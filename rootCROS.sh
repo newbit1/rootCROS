@@ -48,9 +48,9 @@ ProcessArguments() {
 	RemountDrive=false
 	CleanUpMounts=false
 	
-	[ ! -z $restore ] && restore=true
-	[ ! -z $DEBUG ] && DEBUG=true
-	[ ! -z $InstallADBKey ] && InstallADBKey=true
+	[ -n $restore ] && restore=true
+	[ -z $DEBUG ] && DEBUG=true
+	[ ! -n $InstallADBKey ] && InstallADBKey=true
 
 	#restore=true
 	#DEBUG=true
