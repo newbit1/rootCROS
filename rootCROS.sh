@@ -51,15 +51,7 @@ ProcessArguments() {
 	[ -z $restore ] && restore=false
 	[ -z $DEBUG ] && DEBUG=false
 	[ -z $InstallADBKey ] && InstallADBKey=false
-
-	#restore=true
-	#DEBUG=true
-	#InstallADBKey=true
-	
-	echo "restore=$restore"
-	echo "DEBUG=$DEBUG"
-	echo "InstallADBKey=$InstallADBKey"
-	exit 0
+	[ -z $REPLACEINIT ] && REPLACEINIT=false
 	
 	# Overlay Directorys
 	FIN=$BASEDIR/fin
@@ -118,6 +110,7 @@ ProcessArguments() {
 	export restore
 	export DEBUG
 	export InstallADBKey
+	export REPLACEINIT
 }
 
 DownloadAssets() {
@@ -384,8 +377,7 @@ PatchOverlayWithFakeRamdisk() {
 	mv $BASEDIR/ramdisk.img $BASEDIR/ramdisk.cpio.gz
 	$BB gzip -fd $BASEDIR/ramdisk.cpio.gz
 	echo "[-] Extracting ramdisk.cpio"
-	REPLACEINIT=false
-	#REPLACEINIT=true
+
 	cd $FIN > /dev/null
 		$REPLACEINIT && rm ./init		
 		$BB cpio -F $BASEDIR/ramdisk.cpio -i > /dev/null 2>&1
