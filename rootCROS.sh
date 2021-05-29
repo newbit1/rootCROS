@@ -319,10 +319,10 @@ SetOwner() {
 
 patch_init() {
 
-	echo "[*] Removing nodev from remount \" / \""
+	#echo "[*] Removing nodev from remount \" / \""
 	#$BB sed -i 's|mount rootfs rootfs / remount bind ro.*$|mount rootfs rootfs / remount bind ro|g' $FIN/init.rc
-	$BB sed -i 's|mount rootfs rootfs / remount bind ro.*$||g' $FIN/init.rc
-	$BB sed -i 's|mount rootfs rootfs / shared rec.*$||g' $FIN/init.rc
+	#$BB sed -i 's|mount rootfs rootfs / remount bind ro.*$||g' $FIN/init.rc
+	#$BB sed -i 's|mount rootfs rootfs / shared rec.*$||g' $FIN/init.rc
 	echo "[*] Injecting Magisk into init.rc"
 
 	echo "
