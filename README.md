@@ -1,9 +1,18 @@
-### Notes
+# rootCROS
+### [newbit @ xda-developers](https://forum.xda-developers.com/m/newbit.1350876)
+A Script to...
+* root your Google Chrome OS Rammus installed on a non Chromebook Device
+
+### Preconditions
+* Device is installed via [sebanc - Brunch framework](https://github.com/sebanc/brunch)
+* User is logged in
+* Chrome OS developer shell is opened via **ctrl+alt+t** -> `crosh> shell`
+* `mount -o remount,rw /` works
+
+### Usage
 ```
-cd $PORTAGE_CONFIGROOT 
-sudo su
+cd $PORTAGE_CONFIGROOT && sudo su
 curl -LO https://raw.githubusercontent.com/newbit1/rootCROS/master/rootCROS.sh
-chmod +x ./rootCROS.sh
 [OPTIONS]
 bash ./rootCROS.sh
 reboot
@@ -14,10 +23,21 @@ unset restore
 export DEBUG=true
 unset DEBUG
 ```
+### Limitations
+* Only Magisk / su is installed and available
+* Magiskinit does **NOT** replace stock init -> doesn't work (yet)
+  * Hence, Modules are not working as well
+  * and everything else that is Magisk Mirror Mount related
+
+<details>
+<summary>Internal Notes</summary>
 cd $HOME && sudo cp /media/fuse/crostini_6dbef25a0b67e29ada32b2b515c7e2335015d18e_termina_penguin/rootCROS/rootCROS.sh $HOME && bash ./rootCROS.sh && cd - \
 cd $HOME && sudo curl -LO https://raw.githubusercontent.com/newbit1/rootCROS/master/rootCROS.sh && sudo chmod +x ./rootCROS.sh && bash ./rootCROS.sh && cd - \
 cd $HOME/rootCROS && git add . && git commit -m "updates" && git push \
-curl -v -H "Cache-Control: no-cache" https://raw.githubusercontent.com/newbit1/rootCROS/master/rootCROS.sh \
+curl -v -H "Cache-Control: no-cache" https://raw.githubusercontent.com/newbit1/rootCROS/master/rootCROS.sh
+
+</details>
+
 
 
 ### Links
