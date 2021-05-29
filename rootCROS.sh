@@ -535,16 +535,13 @@ read -p "Make your changes and Enter when finshed to continue" </dev/tty
 PatchOverlayWithFakeRamdisk
 PatchSELinux
 
-echo "DEBUG=$DEBUG"
 if ( ! "$DEBUG" ); then
-	read -p "Make your changes and Enter when finshed to continue" </dev/tty
+	#read -p "Make your changes and Enter when finshed to continue" </dev/tty
 	create_backup $SYSRAWIMG
 	makeSQUASHFS	
 	CleanUpMounts
-	rm -r $TMPDIR > /dev/null 2>&1 &	
+	rm -r $TMPDIR > /dev/null 2>&1 &
+else
+	echo "Wer are in Debug Mode"
 fi
 exit 0
-
-#ReadContextPerm
-
-
