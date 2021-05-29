@@ -164,7 +164,7 @@ InstallADBKey() {
 
 InitADB() {
 	echo "[*] Init ADB"
-	set -x
+	#set -x
 	ADBDISABLED=false
 	ADBWORKS=false
 	ADBSERVERUP=false
