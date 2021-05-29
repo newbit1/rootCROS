@@ -167,10 +167,18 @@ InitADB() {
 	set -x
 	ADBDISABLED=false
 	ADBWORKS=false
-	CONNECTTRYS=2
-	adb start-server &
-    	pids=" $!"
-	timeout -k 1 4 tail --pid=$pids -f /dev/null
+	ADBSERVERUP=false
+	CONNECTTRYS=2	
+	
+	while [ "$ADBSERVERUP" != "true" ];do
+		ADBPID=$(pidof adb)
+		[[ "$ADBPID" == "" ]] && adb start-server
+		count=0
+		for PID in $ADBPID;do
+			count=$((count + 1))
+		done
+		[[ "$count" == "1" ]] && ADBSERVERUP=true
+	done
 	
 	while [ "$ADBWORKS" != "true" ];do
 		if [[ "$ADBWORKS" == *"devices/emulators"* ]]; then
