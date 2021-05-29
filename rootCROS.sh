@@ -169,10 +169,10 @@ InitADB() {
 	ADBWORKS=false
 	ADBSERVERUP=false
 	CONNECTTRYS=2	
-	
+	ADBPID=$(pidof adb)
+	[[ "$ADBPID" == "" ]] && adb kill-server && adb start-server &
 	while [ "$ADBSERVERUP" != "true" ];do
 		ADBPID=$(pidof adb)
-		[[ "$ADBPID" == "" ]] && adb start-server
 		count=0
 		for PID in $ADBPID;do
 			count=$((count + 1))
