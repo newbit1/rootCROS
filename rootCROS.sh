@@ -170,7 +170,7 @@ InitADB() {
 	CONNECTTRYS=2
 	adb start-server &
     	pids=" $!"
-	timeout $timeout tail --pid=$pids -f /dev/null
+	timeout -k 1 4 tail --pid=$pids -f /dev/null
 	
 	while [ "$ADBWORKS" != "true" ];do
 		if [[ "$ADBWORKS" == *"devices/emulators"* ]]; then
