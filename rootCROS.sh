@@ -183,7 +183,7 @@ InitADB() {
 	while [ "$ADBWORKS" != "true" ];do
 		if [[ "$ADBWORKS" == *"devices/emulators"* ]]; then
 			ADBDISABLED=true
-			echo "ADBWORKS=$ADBWORKS"
+			#echo "ADBWORKS=$ADBWORKS"
 			echo "[!] Device has no ADB Service running"
 			#adb kill-server
 			break
