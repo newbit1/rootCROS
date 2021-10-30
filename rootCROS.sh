@@ -7,15 +7,7 @@
 
 GainRoot() {
 	if [ $(id -u) != 0 ]; then
-	  #echo "run:"
-	  #echo "cd \$HOME && sudo curl -LO https://raw.githubusercontent.com/newbit1/rootCROS/master/rootCROS.sh && sudo chmod +x && bash ./rootCROS.sh"
-	  #echo "sudo bash ./rootCROS.sh"
-	  #echo "restore0=$restore"
-	  #if [ ! -z $restore ]; then
-	#		export restore
-	 # fi
-	  #export restore
-	  sudo bash -c "exec bash $0 $@"
+	  echo "[*] Re-Run Script as root"
 	  exit 0
 	fi
 }
@@ -143,9 +135,37 @@ DownloadAssets() {
 	fi
 	BB=$BASEDIR/$TARGET
 	
+	TARGET=unsquashfs	
+	$(which $TARGET > /dev/null 2>&1)
+	if [[ "$?" != "0" ]]; then
+		UNSQUASH=$BASEDIR/unsquashfs
+		$(which $UNSQUASH > /dev/null 2>&1)
+		if [[ "$?" != "0" ]]; then
+			echo "[-] Downloading $TARGET"
+			curl -# -LO https://github.com/newbit1/rootAVD/raw/master/$TARGET && chmod +x $TARGET
+		fi
+	else
+		UNSQUASH=$TARGET
+	fi
+
+	TARGET=mksquashfs	
+	$(which $TARGET > /dev/null 2>&1)
+	if [[ "$?" != "0" ]]; then
+		MKSQUASH=$BASEDIR/mksquashfs
+		$(which $MKSQUASH > /dev/null 2>&1)
+		if [[ "$?" != "0" ]]; then
+			echo "[-] Downloading $TARGET"
+			curl -# -LO https://github.com/newbit1/rootAVD/raw/master/$TARGET && chmod +x $TARGET
+		fi
+	else
+		MKSQUASH=$TARGET
+	fi
+		
 	export ROOTAVD
 	export MZ
-	export BB	
+	export BB
+	export UNSQUASH
+	export MKSQUASH
 }
 
 InstallADBKey() {
@@ -291,7 +311,7 @@ CleanUpMounts() {
 
 CreateOverlayMounts() {
 	mkdir $FIN
-	unsquashfs -f -d $FIN $SYSRAWIMG
+	$UNSQUASH -f -d $FIN $SYSRAWIMG
 }
 
 set_perm() {
@@ -467,7 +487,7 @@ PatchSELinux() {
 makeSQUASHFS() {
 	echo "[-] Generating SquashFS with Magisk"
 	rm $SYSRAWIMG
-	mksquashfs $FIN $SYSRAWIMG
+	$MKSQUASH $FIN $SYSRAWIMG
 	echo "[*] Set Magisk SquashFS System"
 	echo "[*] Change Context to $(stat -c %C $VENRAWIMG)"
 	chcon --reference=$VENRAWIMG $SYSRAWIMG
