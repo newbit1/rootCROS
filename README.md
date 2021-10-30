@@ -29,6 +29,10 @@ unset DEBUG
   * Hence, Modules are not working as well
   * and everything else that is Magisk Mirror Mount related
 
+### Change Logs
+#### [October 2021]
+* [rootCROS.sh] - Added squashfs-tools v4.4 from Brunch r90 stable 20210523
+
 <details>
 <summary>Internal Notes</summary>
 cd $HOME && sudo cp /media/fuse/crostini_6dbef25a0b67e29ada32b2b515c7e2335015d18e_termina_penguin/rootCROS/rootCROS.sh $HOME && bash ./rootCROS.sh && cd - \
