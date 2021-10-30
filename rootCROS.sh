@@ -190,9 +190,12 @@ InitADB() {
 	if [[ "$ADBPID" == "" ]]; then
 		adb kill-server > /dev/null 2>&1
 	fi
-	read -p "[!] Give ADB some moments to boot up1" </dev/tty
+	read -p "[!] Give ADB some moments to boot up2" </dev/tty
 	
-	ADBPID=$(adb start-server)
+	while [ "$ADBPID" == "" ];do
+		adb start-server && ADBPID=$(pidof adb)
+	done
+
 	read -p "[!] Give ADB some moments to boot up" </dev/tty
 	
 	while [ "$ADBSERVERUP" != "true" ];do
