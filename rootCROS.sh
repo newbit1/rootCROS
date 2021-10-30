@@ -190,7 +190,7 @@ InitADB() {
 	if [[ "$ADBPID" == "" ]]; then
 		adb kill-server > /dev/null 2>&1
 	fi
-	adb start-server > /dev/null 2>&1
+	adb start-server
 	read -t 3 -p "[!] Give ADB some moments to boot up" </dev/tty
 	
 	while [ "$ADBSERVERUP" != "true" ];do
@@ -542,7 +542,7 @@ $restore && RemountDrive && restore_backup $SYSRAWIMG $VENRAWIMG && restore_back
 #####
 DownloadAssets
 $InstallADBKey && InstallADBKey
-rm $BASEDIR/ramdisk.img
+rm $BASEDIR/ramdisk.img > /dev/null 2>&1
 if [ ! -e "$BASEDIR/ramdisk.img" ]; then
 	InitADB
 	CreateFakeRamdisk
