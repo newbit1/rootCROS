@@ -24,12 +24,8 @@ ChangeLocation() {
 	
 	if [ "$CURDIR" != "$BASEDIR" ]; then
 		echo "[-] Moving to the location $BASEDIR"
-		#rm $BASEDIR/*
 		cp "$0" $BASEDIR
 		cd $BASEDIR
-		echo "[*] Re-Execute the script proper"
-		bash -c "exec ./$0 $@"
-		exit 0
 	fi
 		
 	export BASEDIR
@@ -142,7 +138,7 @@ DownloadAssets() {
 		$(which $UNSQUASH > /dev/null 2>&1)
 		if [[ "$?" != "0" ]]; then
 			echo "[-] Downloading $TARGET"
-			curl -# -LO https://github.com/newbit1/rootAVD/raw/master/$TARGET && chmod +x $TARGET
+			curl -# -LO https://github.com/newbit1/rootCROS/raw/master/$TARGET && chmod +x $TARGET
 		fi
 	else
 		UNSQUASH=$TARGET
@@ -155,7 +151,7 @@ DownloadAssets() {
 		$(which $MKSQUASH > /dev/null 2>&1)
 		if [[ "$?" != "0" ]]; then
 			echo "[-] Downloading $TARGET"
-			curl -# -LO https://github.com/newbit1/rootAVD/raw/master/$TARGET && chmod +x $TARGET
+			curl -# -LO https://github.com/newbit1/rootCROS/raw/master/$TARGET && chmod +x $TARGET
 		fi
 	else
 		MKSQUASH=$TARGET
