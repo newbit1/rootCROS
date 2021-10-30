@@ -191,8 +191,7 @@ InitADB() {
 		adb kill-server > /dev/null 2>&1
 	fi
 	adb start-server > /dev/null 2>&1
-	echo "[!] Give ADB some moments to boot up"
-	read -t 3
+	read -t 3 -p "[!] Give ADB some moments to boot up" </dev/tty
 	
 	while [ "$ADBSERVERUP" != "true" ];do
 		ADBPID=$(pidof adb)
