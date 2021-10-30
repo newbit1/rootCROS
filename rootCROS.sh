@@ -186,9 +186,14 @@ InitADB() {
 	ADBSERVERUP=false
 	CONNECTTRYS=2	
 	ADBPID=$(pidof adb)
-	[[ "$ADBPID" == "" ]] && adb kill-server && adb start-server &
-	echo "[!] Wait a couple of seconds to get ADB started"
-	read -t 5
+	
+	if [[ "$ADBPID" == "" ]]; then
+		adb kill-server > /dev/null 2>&1
+	fi
+	adb start-server &	
+	echo "[!] Give ADB some moments to boot up"
+	read -t 3
+	
 	while [ "$ADBSERVERUP" != "true" ];do
 		ADBPID=$(pidof adb)
 		count=0
