@@ -7,7 +7,7 @@ A Script to...
 * Device is installed via [sebanc - Brunch framework](https://github.com/sebanc/brunch)
 * User is logged in
 * Chrome OS developer shell is opened via **ctrl+alt+t** -> `crosh> shell`
-* `mount -o remount,rw /` works
+* `sudo mount -o remount,rw /` works
 
 ### Usage
 ```
