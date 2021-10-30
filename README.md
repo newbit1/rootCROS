@@ -42,10 +42,15 @@ curl -v -H "Cache-Control: no-cache" https://raw.githubusercontent.com/newbit1/r
 
 </details>
 
-
+### Tested on
+* ChromeOS R93 Stable Rammus + Brunch r93 stable 20211002
+* ChromeOS R90 Stable Rammus + Brunch r90 stable 20210523
 
 ### Links
+* [ChromeOS R93 Stable Rammus](https://dl.google.com/dl/edgedl/chromeos/recovery/chromeos_14092.77.0_rammus_recovery_stable-channel_mp-v2.bin.zip)
+* [Brunch r93 stable 20211002](https://github.com/sebanc/brunch/releases/tag/r93-stable-20211002)
 * [ChromeOS R90 Stable Rammus](https://dl.google.com/dl/edgedl/chromeos/recovery/chromeos_13816.64.0_rammus_recovery_stable-channel_mp-v2.bin.zip)
+* [Brunch r90 stable 20210523](https://github.com/sebanc/brunch/releases/tag/r90-stable-20210523)
 
 ### Credits
 * [topjohnwu Magisk](https://github.com/topjohnwu/Magisk/releases)
