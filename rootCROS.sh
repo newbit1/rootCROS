@@ -187,6 +187,8 @@ InitADB() {
 	CONNECTTRYS=2	
 	ADBPID=$(pidof adb)
 	[[ "$ADBPID" == "" ]] && adb kill-server && adb start-server &
+	echo "[!] Wait a couple of seconds to get ADB started"
+	read -t 5
 	while [ "$ADBSERVERUP" != "true" ];do
 		ADBPID=$(pidof adb)
 		count=0
@@ -225,14 +227,14 @@ CreateFakeRamdisk() {
 	echo "[*] Creating fake ramdisk.img"
 	RAMDISKDIR=$TMPDIR/fakeramdisk
 	CPIO=$BASEDIR/ramdisk.cpio
-	rm -rf $RAMDISKDIR
+	rm -rf $RAMDISKDIR > /dev/null 2>&1
 	mkdir -p $RAMDISKDIR
 	cp $ANDROIROOTDIR/init $RAMDISKDIR
 	#cp $ANDROIROOTDIR/fstab.cheets $RAMDISKDIR
 	cd $RAMDISKDIR > /dev/null
 		`$BB find . | $BB cpio -H newc -o | $BB gzip > $BASEDIR/ramdisk.img`
 	cd - > /dev/null
-	rm -rf $RAMDISKDIR
+	rm -rf $RAMDISKDIR > /dev/null 2>&1
 	export RAMDISKDIR
 }
 
@@ -254,10 +256,10 @@ PatchFakeRamdisk() {
 		adb install -r -d Magisk.apk
 	elif ( "$ADBDISABLED" ); then
 		echo "[*] Cleaning up the android-sh working space"
-		rm -rf $ANDROIDATADIR$ADBBASEDIR
-		rm $ANDROIDATADIR$ADBWORKDIR/rootAVD.sh
-		rm $ANDROIDATADIR$ADBWORKDIR/ramdisk.img
-		rm $ANDROIDATADIR$ADBWORKDIR/Magisk.zip
+		rm -rf $ANDROIDATADIR$ADBBASEDIR > /dev/null 2>&1
+		rm $ANDROIDATADIR$ADBWORKDIR/rootAVD.sh > /dev/null 2>&1
+		rm $ANDROIDATADIR$ADBWORKDIR/ramdisk.img > /dev/null 2>&1
+		rm $ANDROIDATADIR$ADBWORKDIR/Magisk.zip > /dev/null 2>&1
 		echo "rm -rf $ADBBASEDIR" | android-sh
 		
 		echo "[*] Creating the android-sh working space"
