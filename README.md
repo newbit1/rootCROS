@@ -1,18 +1,20 @@
 # rootCROS
 ### [newbit @ xda-developers](https://forum.xda-developers.com/m/newbit.1350876)
 A Script to...
-* root your Google Chrome OS Rammus installed on a non Chromebook Device
+* root your Google Chrome OS Rammus, Samus and Atlas installed on a non Chromebook Device
 
 ### Preconditions
 * Device is installed via [sebanc - Brunch framework](https://github.com/sebanc/brunch)
 * User is logged in
 * Chrome OS developer shell is opened via **ctrl+alt+t** -> `crosh> shell`
 * `sudo mount -o remount,rw /` works
+* adb is up -> `adb start-server`
 
 ### Usage
 ```
 cd $PORTAGE_CONFIGROOT && sudo su
 curl -LO https://raw.githubusercontent.com/newbit1/rootCROS/master/rootCROS.sh
+
 [OPTIONS]
 bash ./rootCROS.sh
 reboot
@@ -30,6 +32,8 @@ unset DEBUG
   * and everything else that is Magisk Mirror Mount related
 
 ### Change Logs
+#### [November 2021]
+* [rootCROS.sh] - Added Samus R91 (x86-only) and Atlas R93 support
 #### [October 2021]
 * [rootCROS.sh] - Added squashfs-tools v4.4 from Brunch r90 stable 20210523
 
@@ -43,10 +47,14 @@ curl -v -H "Cache-Control: no-cache" https://raw.githubusercontent.com/newbit1/r
 </details>
 
 ### Tested on
+* ChromeOS R91 Stable Samus + Brunch r93 stable 20211002
+* ChromeOS R93 Stable Atlas + Brunch r93 stable 20211002
 * ChromeOS R93 Stable Rammus + Brunch r93 stable 20211002
 * ChromeOS R90 Stable Rammus + Brunch r90 stable 20210523
 
 ### Links
+* [ChromeOS R91 Stable Samus](https://dl.google.com/dl/edgedl/chromeos/recovery/chromeos_13904.77.0_samus_recovery_stable-channel_mp-v3.bin.zip)
+* [ChromeOS R93 Stable Atlas](https://dl.google.com/dl/edgedl/chromeos/recovery/chromeos_14092.77.0_atlas_recovery_stable-channel_mp.bin.zip)
 * [ChromeOS R93 Stable Rammus](https://dl.google.com/dl/edgedl/chromeos/recovery/chromeos_14092.77.0_rammus_recovery_stable-channel_mp-v2.bin.zip)
 * [Brunch r93 stable 20211002](https://github.com/sebanc/brunch/releases/tag/r93-stable-20211002)
 * [ChromeOS R90 Stable Rammus](https://dl.google.com/dl/edgedl/chromeos/recovery/chromeos_13816.64.0_rammus_recovery_stable-channel_mp-v2.bin.zip)

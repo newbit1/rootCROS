@@ -189,13 +189,9 @@ InitADB() {
 	
 	if [[ "$ADBPID" == "" ]]; then
 		adb kill-server > /dev/null 2>&1
+		echo "[*] run adb start-server first and run script again"
+		exit
 	fi	
-	
-	while [ "$ADBPID" == "" ];do
-		adb start-server && ADBPID=$(pidof adb)
-	done
-
-	echo "[!] Give ADB some moments to boot up"
 	
 	while [ "$ADBSERVERUP" != "true" ];do
 		ADBPID=$(pidof adb)
@@ -434,16 +430,23 @@ PatchOverlayWithFakeRamdisk() {
 	cd $BASEDIR > /dev/null
 	
 	cd $FIN/sbin > /dev/null
-		$BB unxz -f magisk64.xz
-		$BB unxz -f magisk32.xz
-		#$BB magisk64 magisk
+		FILES="*.xz"
+		for f in $FILES;do
+			$BB unxz -f $f
+		done
+		
+		if [ -e "magisk64" ]; then
+			ln -sf ./magisk64 ./magisk
+			set_perm ./magisk64 $ANDROIDROOT $ANDROIDROOT 0755 u:object_r:magisk_exec:s0
+		elif [ -e "magisk32" ]; then
+			ln -sf ./magisk32 ./magisk			
+		fi
+		
 		set_perm_recursive $FIN/sbin $ANDROIDROOT $ANDROIDROOT 0755 0777
-		set_perm_recursive $FIN/overlay.d $ANDROIDROOT $ANDROIDROOT 0755 0777
-		set_perm ./magisk64 $ANDROIDROOT $ANDROIDROOT 0755 u:object_r:magisk_exec:s0
+		set_perm_recursive $FIN/overlay.d $ANDROIDROOT $ANDROIDROOT 0755 0777			
+		
 		set_perm ./magisk32 $ANDROIDROOT $ANDROIDROOT 0755 u:object_r:magisk_exec:s0
 		
-		#ln -s ./magisk32 ./magisk		
-		ln -sf ./magisk64 ./magisk
 		set_perm ./magisk $ANDROIDROOT $ANDROIDROOT 0755 u:object_r:system_file:s0
 		
 		ln -sf ./magisk ./su
