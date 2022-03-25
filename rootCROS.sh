@@ -66,6 +66,8 @@ ProcessArguments() {
 	ADBKEYPUB=adbkey.pub
 	ADBKEYS=/data/misc/adb/adb_keys
 	
+	BBSCR=$BASEDIR/bbscript.sh
+	
 	if [[ "$@" == *"CleanUpMounts"* ]]; then
 		CleanUpMounts=true
 	fi
@@ -99,6 +101,8 @@ ProcessArguments() {
 	export DEBUG
 	export InstallADBKey
 	export REPLACEINIT
+	
+	export BBSCR
 }
 
 DownloadAssets() {
@@ -125,7 +129,6 @@ DownloadAssets() {
 	if [ ! -e "$TARGET" ]; then
 		echo "[-] Downloading $TARGET"
 		curl -# -L https://github.com/Magisk-Modules-Repo/busybox-ndk/raw/master/$TARGET-x86_64 -o $TARGET && chmod +x $TARGET
-		#curl -# -L https://busybox.net/downloads/binaries/1.31.0-defconfig-multiarch-musl/busybox-i686 -o $TARGET && chmod +x $TARGET		
 	else
 		echo "[-] $TARGET already there"
 	fi
@@ -314,6 +317,28 @@ CleanUpMounts() {
 CreateOverlayMounts() {
 	mkdir $FIN
 	$UNSQUASH -f -d $FIN $SYSRAWIMG
+}
+
+DeleteBusyboxFromScript() {
+	local bblineoffset=""
+	local last_line=""
+	local bbline_cnt=""
+	cp rootAVD.sh $BBSCR
+
+	bblineoffset=$($BB sed -n '/BUSYBOXBINARY/=' $BBSCR | $BB sort -n)
+	bbline_cnt=$($BB sed -n '/BUSYBOXBINARY/=' $BBSCR | $BB sort -n | $BB sed -n '$=')
+
+	if [[ "$bbline_cnt" -gt "3" ]]; then	
+		j=0
+		for i in $bblineoffset; do
+			j=$((j+1))
+			if [[ "$j" -eq "4" ]]; then
+				echo "[*] Deleting busybox from script ..."
+				$BB sed -i "$i",'$d' $BBSCR
+				break
+			fi
+		done
+	fi
 }
 
 set_perm() {
@@ -541,6 +566,7 @@ restore_backup() {
 GainRoot
 ChangeLocation
 ProcessArguments $@
+DeleteBusyboxFromScript
 
 #####
 $RemountDrive && RemountDrive && exit 0
