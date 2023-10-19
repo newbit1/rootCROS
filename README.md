@@ -1,4 +1,7 @@
-# rootCROS
+# This Repo will be archived at the 24th of Oct 2023
+# Due to the forced 2FA Mumbo Jumbo from GitHub,
+# this Repo has moved to GitLab
+# [rootCROS](https://gitlab.com/newbit/rootCROS)
 ### [newbit @ xda-developers](https://forum.xda-developers.com/m/newbit.1350876)
 A Script to...
 * root your Google Chrome OS Rammus, Samus and Atlas installed on a non Chromebook Device
